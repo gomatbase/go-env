@@ -45,7 +45,7 @@ func TestVariableExctraction(t *testing.T) {
 	})
 
 	//Test defined environment variables with non-provided values and with/without default values
-	t.Run("Test Unconfigured properties with default values", func(t *testing.T) {
+	t.Run("Test unconfigured properties with default values", func(t *testing.T) {
 		AddProperty("property1").WithDefaultValue("default1")
 		AddProperty("property2")
 		Build()
@@ -59,6 +59,44 @@ func TestVariableExctraction(t *testing.T) {
 		}
 		if Get("property3") != nil {
 			t.Error("property3 was expected to be nil")
+		}
+	})
+
+	// Test chain of extraction
+	t.Run("Test chain of extraction", func(t *testing.T) {
+		originalArgs := os.Args
+		os.Args = []string{"app", "-property1", "cmlValue1", "-property2", "cmlValue2"}
+		_ = os.Setenv("property1", "evValue1")
+		_ = os.Setenv("property3", "evValue3")
+		AddProperty("property1").WithDefaultValue("default1")
+		AddProperty("property2").WithDefaultValue("default2")
+		AddProperty("property3").WithDefaultValue("default3")
+		AddProperty("property4").WithDefaultValue("default4")
+		Build()
+		os.Args = originalArgs
+
+		if v, isType := Get("property1").(string); !isType {
+			t.Error("property1 is not of the expected type")
+		} else if v != "cmlValue1" {
+			t.Errorf("value for property1 is not the expected one: %v", v)
+		}
+		if v, isType := Get("property2").(string); !isType {
+			t.Error("property1 is not of the expected type")
+		} else if v != "cmlValue2" {
+			t.Errorf("value for property2 is not the expected one: %v", v)
+		}
+		if v, isType := Get("property3").(string); !isType {
+			t.Error("property3 is not of the expected type")
+		} else if v != "evValue3" {
+			t.Errorf("value for property3 is not the expected one: %v", v)
+		}
+		if v, isType := Get("property4").(string); !isType {
+			t.Error("property4 is not of the expected type")
+		} else if v != "default4" {
+			t.Errorf("value for property4 is not the expected one: %v", v)
+		}
+		if Get("property5") != nil {
+			t.Error("property5 was expected to be nil")
 		}
 	})
 }
