@@ -6,7 +6,7 @@ package env
 
 import "github.com/gomatbase/go-env/providers"
 
-var defaultProviderChain = []Provider{providers.CmlArgumentsProvider(), providers.JsonConfigurationProvider(), providers.EnvironmentVariablesProvider()}
+var defaultProviderChain = []Provider{providers.CmlArgumentsProvider(), providers.JsonConfigurationProvider(), providers.YamlConfigurationProvider(), providers.EnvironmentVariablesProvider()}
 
 type environment struct {
 	properties map[string]*property
