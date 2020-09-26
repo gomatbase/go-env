@@ -68,18 +68,21 @@ func NewJsonConfigurationProviderWithOptions(options JsonConfigurationProviderOp
 		options: options,
 		json:    make(map[string]interface{}),
 	}
-	if options.FileFromCml {
-		if v := CmlArgumentsProvider().Get(options.CmlSwitch); v != nil {
-			jcp.options.Filename = v.(string)
-		}
-	}
 	_ = jcp.Refresh()
 	return jcp
 }
 
 func (jcp *jsonConfigurationProvider) Refresh() error {
+	if jcp.options.FileFromCml {
+		if v := CmlArgumentsProvider().Get(jcp.options.CmlSwitch); v != nil {
+			jcp.options.Filename = v.(string)
+		} else {
+			jcp.options.Filename = ""
+		}
+	}
 	if b, e := ioutil.ReadFile(jcp.options.Filename); e != nil {
-		log.Print("Unable to read json file : \"%v\"", e)
+		log.Printf("Unable to read json file : \"%v\"", e)
+		jcp.json = make(map[string]interface{})
 		return e
 	} else if e = json.Unmarshal(b, &jcp.json); e != nil {
 		return e

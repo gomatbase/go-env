@@ -45,6 +45,37 @@ func TestVariableExctraction(t *testing.T) {
 	})
 
 	//Test defined environment variables with non-provided values and with/without default values
+	t.Run("Test json configuration with defaults and overrides", func(t *testing.T) {
+		originalArgs := os.Args
+		os.Args = []string{"app", "-Jsection.property2", "overrideSectionJsonValue2", "-j", "tests/config.json"}
+
+		AddProperty("property1").WithDefaultValue("default1")
+		Build()
+		os.Args = originalArgs
+
+		if v, isType := Get("property1").(string); !isType {
+			t.Error("property1 is not of the expected type")
+		} else if v != "jsonValue1" {
+			t.Error("value for property1 is not the expected one: ", v)
+		}
+		if v, isType := Get("property3").(string); !isType {
+			t.Error("property3 is not of the expected type")
+		} else if v != "jsonValue3" {
+			t.Error("value for property3 is not the expected one: ", v)
+		}
+		if v, isType := Get("section.property1").(string); !isType {
+			t.Error("section.property1 is not of the expected type")
+		} else if v != "sectionJsonValue1" {
+			t.Error("value for section.property1 is not the expected one: ", v)
+		}
+		if v, isType := Get("section.property2").(string); !isType {
+			t.Error("section.property2 is not of the expected type")
+		} else if v != "overrideSectionJsonValue2" {
+			t.Error("value for section.property2 is not the expected one: ", v)
+		}
+	})
+
+	//Test json configuration provider with non-provided values and with/without default values
 	t.Run("Test unconfigured properties with default values", func(t *testing.T) {
 		AddProperty("property1").WithDefaultValue("default1")
 		AddProperty("property2")
