@@ -8,11 +8,9 @@ import "github.com/gomatbase/go-env/providers"
 
 var defaultProviderChain = []Provider{providers.CmlArgumentsProvider(), providers.JsonConfigurationProvider(), providers.YamlConfigurationProvider(), providers.EnvironmentVariablesProvider()}
 
-type environment struct {
+var env = &struct {
 	properties map[string]*property
-}
-
-var env = &environment{
+}{
 	properties: make(map[string]*property),
 }
 
@@ -23,8 +21,15 @@ func AddProperty(name string) *property {
 }
 
 // initializes environment with provided configuration
-func Build() {
-	Refresh()
+func Load() []error {
+	var errors []error
+	for _, provider := range defaultProviderChain {
+		if e := provider.Load(); e != nil {
+			errors = append(errors, e)
+		}
+	}
+
+	return errors
 }
 
 // validates if all non-string properties have been provided by a suitable format
@@ -32,6 +37,7 @@ func Validate() {
 
 }
 
+// Gets the value of a property if it's provided. Returns nil if not.
 func Get(name string) interface{} {
 	p, hit := env.properties[name]
 	var providerChain *[]Provider
@@ -71,6 +77,8 @@ func Get(name string) interface{} {
 	return nil
 }
 
+// Refreshes Provider configurations. A provider does not need to guarantee a
+// refresh, but should have an error-free implementation then.
 func Refresh() []error {
 	errors := []error{}
 	for _, provider := range defaultProviderChain {

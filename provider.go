@@ -10,6 +10,9 @@ type Provider interface {
 	// Get the value for the given property. nil should be returned if no property is found or an error with it exists
 	Get(name string) interface{}
 
+	// Loads the values it should provide
+	Load() error
+
 	// Refresh the provider sources. Useful for sources which are mutable during a single execution (like file sources)
 	Refresh() error
 }

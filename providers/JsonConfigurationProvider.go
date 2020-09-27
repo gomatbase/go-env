@@ -66,30 +66,40 @@ func NewJsonConfigurationProvider() *jsonConfigurationProvider {
 func NewJsonConfigurationProviderWithOptions(options JsonConfigurationProviderOptions) *jsonConfigurationProvider {
 	jcp := &jsonConfigurationProvider{
 		options: options,
-		json:    make(map[string]interface{}),
 	}
-	_ = jcp.Refresh()
+	_ = jcp.Load()
 	return jcp
 }
 
-func (jcp *jsonConfigurationProvider) Refresh() error {
+// Loads the json configuration file. This is the only time when the filename is
+// resolved as the source is not expected to change for a refresh.
+func (jcp *jsonConfigurationProvider) Load() error {
 	if jcp.options.FileFromCml {
 		if v := CmlArgumentsProvider().Get(jcp.options.CmlSwitch); v != nil {
 			jcp.options.Filename = v.(string)
 		} else {
 			jcp.options.Filename = ""
 		}
-	}
-	if b, e := ioutil.ReadFile(jcp.options.Filename); e != nil {
-		log.Printf("Unable to read json file : \"%v\"", e)
 		jcp.json = make(map[string]interface{})
-		return e
-	} else if e = json.Unmarshal(b, &jcp.json); e != nil {
-		return e
+	}
+	return jcp.Refresh()
+}
+
+// Reloads the configuration file. If no json file is configured, it is a nil operation.
+func (jcp *jsonConfigurationProvider) Refresh() error {
+	if jcp.options.Filename != "" {
+		if b, e := ioutil.ReadFile(jcp.options.Filename); e != nil {
+			log.Printf("Unable to read json file : \"%v\"", e)
+			jcp.json = make(map[string]interface{})
+			return e
+		} else if e = json.Unmarshal(b, &jcp.json); e != nil {
+			return e
+		}
 	}
 	return nil
 }
 
+// Gets the given property from the json file, if available.
 func (jcp *jsonConfigurationProvider) Get(name string) interface{} {
 	// first check if we allow cml override, and if we do, try to get it from there
 	if jcp.options.CmlPropertyOverride {

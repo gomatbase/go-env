@@ -33,6 +33,12 @@ func NewEnvironmentVariablesProvider() *environmentVariablesProvider {
 	return evp
 }
 
+// Loads the environment variables. This is a nil operation as the environment variables are always taken directly from os calls
+func (evp *environmentVariablesProvider) Load() error {
+	return nil
+}
+
+// Refreshes the environment variables. This is a nil operation as the environment variables are always taken directly from os calls
 func (evp *environmentVariablesProvider) Refresh() error {
 	return nil
 }

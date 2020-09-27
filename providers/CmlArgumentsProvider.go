@@ -45,6 +45,7 @@ func NewCmlArgumentsProvider() *cmlArgumentsProvider {
 	return cmlap
 }
 
+// Gets the value of the given property, if defined.
 func (cmlap *cmlArgumentsProvider) Get(name string) interface{} {
 	v, found := cmlap.switches[name]
 	if found {
@@ -53,8 +54,11 @@ func (cmlap *cmlArgumentsProvider) Get(name string) interface{} {
 	return nil
 }
 
-func (cmlap *cmlArgumentsProvider) Refresh() error {
-	// cml is fixed from start of application, no refresh is possible but we implement it anyway for testing purposes
+// Parses the command line looking for switches and eventually assigning values
+// to them. It supports normal switches (-) long named switches (--) and assigns
+// single values when used with the assignment operator (=) or the whole value
+// set after a space until the next switch or end of arguments.
+func (cmlap *cmlArgumentsProvider) Load() error {
 	cmlap.args = os.Args
 	cmlap.switches = make(map[string]string)
 
@@ -89,5 +93,10 @@ func (cmlap *cmlArgumentsProvider) Refresh() error {
 
 		// non contextualized values are currently not indexed
 	}
+	return nil
+}
+
+// cml is fixed from start of application, no refresh is possible but we implement it anyway for testing purposes
+func (cmlap *cmlArgumentsProvider) Refresh() error {
 	return nil
 }

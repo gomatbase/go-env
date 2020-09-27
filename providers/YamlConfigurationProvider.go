@@ -64,43 +64,53 @@ func NewYamlConfigurationProvider() *yamlConfigurationProvider {
 
 // Creates a new JSON configuration Provider with given options
 func NewYamlConfigurationProviderWithOptions(options YamlConfigurationProviderOptions) *yamlConfigurationProvider {
-	jcp := &yamlConfigurationProvider{
+	ycp := &yamlConfigurationProvider{
 		options: options,
-		yaml:    make(map[interface{}]interface{}),
 	}
-	_ = jcp.Refresh()
-	return jcp
+	_ = ycp.Refresh()
+	return ycp
 }
 
-func (jcp *yamlConfigurationProvider) Refresh() error {
-	if jcp.options.FileFromCml {
-		if v := CmlArgumentsProvider().Get(jcp.options.CmlSwitch); v != nil {
-			jcp.options.Filename = v.(string)
+// Loads the yaml configuration file. This is the only time when the filename is
+// resolved as the source is not expected to change for a refresh.
+func (ycp *yamlConfigurationProvider) Load() error {
+	if ycp.options.FileFromCml {
+		if v := CmlArgumentsProvider().Get(ycp.options.CmlSwitch); v != nil {
+			ycp.options.Filename = v.(string)
 		} else {
-			jcp.options.Filename = ""
+			ycp.options.Filename = ""
 		}
+		ycp.yaml = make(map[interface{}]interface{})
 	}
-	if b, e := ioutil.ReadFile(jcp.options.Filename); e != nil {
-		log.Printf("Unable to read yaml file : \"%v\"", e)
-		jcp.yaml = make(map[interface{}]interface{})
-		return e
-	} else if e = yaml.Unmarshal(b, &jcp.yaml); e != nil {
-		return e
+	return ycp.Refresh()
+}
+
+// Reloads the configuration file. If no yaml file is configured, it is a nil operation.
+func (ycp *yamlConfigurationProvider) Refresh() error {
+	if ycp.options.Filename != "" {
+		if b, e := ioutil.ReadFile(ycp.options.Filename); e != nil {
+			log.Printf("Unable to read yaml file : \"%v\"", e)
+			ycp.yaml = make(map[interface{}]interface{})
+			return e
+		} else if e = yaml.Unmarshal(b, &ycp.yaml); e != nil {
+			return e
+		}
 	}
 	return nil
 }
 
-func (jcp *yamlConfigurationProvider) Get(name string) interface{} {
+// Gets the given property if available.
+func (ycp *yamlConfigurationProvider) Get(name string) interface{} {
 	// first check if we allow cml override, and if we do, try to get it from there
-	if jcp.options.CmlPropertyOverride {
-		if v := CmlArgumentsProvider().Get(jcp.options.CmlPropertyOverrideSwitch + name); v != nil {
+	if ycp.options.CmlPropertyOverride {
+		if v := CmlArgumentsProvider().Get(ycp.options.CmlPropertyOverrideSwitch + name); v != nil {
 			return v
 		}
 	}
 	// first split the parcels from the dot notation
 	parcels := strings.Split(name, ".")
 	var currentBlock *map[interface{}]interface{}
-	var currentValue interface{} = jcp.yaml
+	var currentValue interface{} = ycp.yaml
 	for _, p := range parcels {
 		if b, isType := currentValue.(map[interface{}]interface{}); !isType {
 			return nil

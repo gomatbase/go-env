@@ -14,8 +14,7 @@ func TestVariableExctraction(t *testing.T) {
 	t.Run("Test ad-hoc cml extraction", func(t *testing.T) {
 		originalArgs := os.Args
 		os.Args = []string{"app", "-property1", "cmlValue1", "--property2", "longValue", "-property3=assignedValue"}
-		Refresh()
-		os.Args = originalArgs
+		Load()
 		if v, isType := Get("property1").(string); !isType {
 			t.Error("property1 is not of the expected type")
 		} else if v != "cmlValue1" {
@@ -31,11 +30,12 @@ func TestVariableExctraction(t *testing.T) {
 		} else if v != "assignedValue" {
 			t.Error("value for property3 is not the expected one: ", v)
 		}
+		os.Args = originalArgs
 	})
 
 	t.Run("Test ad-hoc system environment variables extraction", func(t *testing.T) {
 		_ = os.Setenv("property1", "evValue1")
-		Refresh()
+		Load()
 		if v, isType := Get("property1").(string); !isType {
 			t.Error("property1 is not of the expected type")
 		} else if v != "evValue1" {
@@ -50,8 +50,7 @@ func TestVariableExctraction(t *testing.T) {
 		os.Args = []string{"app", "-Jsection.property2", "overrideSectionJsonValue2", "-j", "tests/config.json"}
 
 		AddProperty("property1").WithDefaultValue("default1")
-		Build()
-		os.Args = originalArgs
+		Load()
 
 		if v, isType := Get("property1").(string); !isType {
 			t.Error("property1 is not of the expected type")
@@ -73,6 +72,8 @@ func TestVariableExctraction(t *testing.T) {
 		} else if v != "overrideSectionJsonValue2" {
 			t.Error("value for section.property2 is not the expected one: ", v)
 		}
+
+		os.Args = originalArgs
 	})
 
 	// Test yml provided values
@@ -81,8 +82,7 @@ func TestVariableExctraction(t *testing.T) {
 		os.Args = []string{"app", "-Ysection.property2", "overrideSectionYamlValue2", "-y", "tests/config.yml"}
 
 		AddProperty("property1").WithDefaultValue("default1")
-		Build()
-		os.Args = originalArgs
+		Load()
 
 		if v, isType := Get("property1").(string); !isType {
 			t.Error("property1 is not of the expected type")
@@ -104,13 +104,15 @@ func TestVariableExctraction(t *testing.T) {
 		} else if v != "overrideSectionYamlValue2" {
 			t.Error("value for section.property2 is not the expected one: ", v)
 		}
+
+		os.Args = originalArgs
 	})
 
 	//Test defined environment variables with non-provided values and with/without default values
 	t.Run("Test unprovided properties with default values", func(t *testing.T) {
 		AddProperty("property1").WithDefaultValue("default1")
 		AddProperty("property2")
-		Build()
+		Load()
 		if v, isType := Get("property1").(string); !isType {
 			t.Error("property1 is not of the expected type")
 		} else if v != "default1" {
@@ -134,8 +136,7 @@ func TestVariableExctraction(t *testing.T) {
 		AddProperty("property2").WithDefaultValue("default2")
 		AddProperty("property3").WithDefaultValue("default3")
 		AddProperty("property4").WithDefaultValue("default4")
-		Build()
-		os.Args = originalArgs
+		Load()
 
 		if v, isType := Get("property1").(string); !isType {
 			t.Error("property1 is not of the expected type")
@@ -160,5 +161,7 @@ func TestVariableExctraction(t *testing.T) {
 		if Get("property5") != nil {
 			t.Error("property5 was expected to be nil")
 		}
+
+		os.Args = originalArgs
 	})
 }
