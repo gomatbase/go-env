@@ -35,34 +35,40 @@ func Validate() {
 func Get(name string) interface{} {
 	p, hit := env.properties[name]
 	var providerChain *[]Provider
+	var aliases *[]string
+	var convert func(value interface{}) interface{}
 	if !hit || p.providerChain == nil {
 		// no property was configured, but we still follow the default chain (CML and then OS ENV)
 		providerChain = &defaultProviderChain
+		aliases = &[]string{name}
+		convert = nil
 	} else {
 		providerChain = p.providerChain
+		aliases = &p.aliases
+		convert = p.converter
 	}
 
-	// first we try to get the value down the precedence provider chain
+	// search the provider chain for the property
 	var value interface{}
 	for _, provider := range *providerChain {
-		value = provider.Get(name)
-		if value != nil {
-			break
+		for _, alias := range *aliases {
+			value = provider.Get(alias)
+			if value != nil {
+				if convert != nil {
+					value = convert(value)
+				}
+				return value
+			}
 		}
 	}
 
-	// If not found, let's assign it the default value if provided
-	if value == nil && p != nil {
-		value = p.defaultValue
+	// value not found, check if it's a defined property to get the default value
+	if p != nil {
+		return p.defaultValue
 	}
 
-	// then we try to convert it if a converter was provided
-	if value != nil && p != nil && p.converter != nil {
-		value = p.converter(value)
-	}
-
-	// and finally we return the provided value
-	return value
+	// nothing found and no default value
+	return nil
 }
 
 func Refresh() []error {
