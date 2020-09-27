@@ -11,6 +11,12 @@ type property struct {
 	converter     func(value interface{}) interface{}
 }
 
-func (p *property) WithDefaultValue(defaultValue interface{}) {
+func (p *property) WithDefaultValue(defaultValue interface{}) *property {
 	p.defaultValue = defaultValue
+	return p
+}
+
+func (p *property) WithConverter(converter func(value interface{}) interface{}) *property {
+	p.converter = converter
+	return p
 }
