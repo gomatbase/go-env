@@ -4,14 +4,29 @@
 
 package env
 
-import "github.com/gomatbase/go-env/providers"
-
-var defaultProviderChain = []Provider{providers.CmlArgumentsProvider(), providers.JsonConfigurationProvider(), providers.YamlConfigurationProvider(), providers.EnvironmentVariablesProvider()}
+import (
+	"errors"
+	"github.com/gomatbase/go-env/providers"
+)
 
 var env = &struct {
 	properties map[string]*property
+	settings   Settings
 }{
 	properties: make(map[string]*property),
+	settings: Settings{
+		DefaultProviderChain: []Provider{
+			providers.CmlArgumentsProvider(),
+			providers.JsonConfigurationProvider(),
+			providers.YamlConfigurationProvider(),
+			providers.EnvironmentVariablesProvider(),
+		},
+	},
+}
+
+type Settings struct {
+	IgnoreRequired       bool
+	DefaultProviderChain []Provider
 }
 
 func AddProperty(name string) *property {
@@ -22,19 +37,28 @@ func AddProperty(name string) *property {
 
 // initializes environment with provided configuration
 func Load() []error {
-	var errors []error
-	for _, provider := range defaultProviderChain {
+	var result []error
+	for _, provider := range env.settings.DefaultProviderChain {
 		if e := provider.Load(); e != nil {
-			errors = append(errors, e)
+			result = append(result, e)
 		}
 	}
 
-	return errors
+	return result
 }
 
 // validates if all non-string properties have been provided by a suitable format
-func Validate() {
-
+func Validate() []error {
+	var result []error
+	for name, property := range env.properties {
+		if property.required && Get(name) == nil {
+			result = append(result, errors.New("Property "+name+" not provided!"))
+		}
+	}
+	if env.settings.IgnoreRequired {
+		return result
+	}
+	panic(result)
 }
 
 // Gets the value of a property if it's provided. Returns nil if not.
@@ -45,7 +69,7 @@ func Get(name string) interface{} {
 	var convert func(value interface{}) interface{}
 	if !hit || p.providerChain == nil {
 		// no property was configured, but we still follow the default chain (CML and then OS ENV)
-		providerChain = &defaultProviderChain
+		providerChain = &env.settings.DefaultProviderChain
 		aliases = &[]string{name}
 		convert = nil
 	} else {
@@ -80,15 +104,11 @@ func Get(name string) interface{} {
 // Refreshes Provider configurations. A provider does not need to guarantee a
 // refresh, but should have an error-free implementation then.
 func Refresh() []error {
-	errors := []error{}
-	for _, provider := range defaultProviderChain {
+	var result []error
+	for _, provider := range env.settings.DefaultProviderChain {
 		if e := provider.Refresh(); e != nil {
-			errors = append(errors, e)
+			result = append(result, e)
 		}
-	}
-
-	if len(errors) > 0 {
-		return errors
 	}
 
 	return nil

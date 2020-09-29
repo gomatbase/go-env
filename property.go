@@ -6,6 +6,7 @@ package env
 
 type property struct {
 	name          string
+	required      bool
 	aliases       []string
 	defaultValue  interface{}
 	providerChain *[]Provider
@@ -24,5 +25,10 @@ func (p *property) WithConverter(converter func(value interface{}) interface{}) 
 
 func (p *property) WithAliases(alias ...string) *property {
 	p.aliases = append(p.aliases, alias...)
+	return p
+}
+
+func (p *property) Required() *property {
+	p.required = true
 	return p
 }
