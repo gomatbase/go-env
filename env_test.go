@@ -5,6 +5,8 @@
 package env
 
 import (
+	"github.com/gomatbase/go-env/providers"
+	"log"
 	"os"
 	"testing"
 )
@@ -163,5 +165,47 @@ func TestVariableExctraction(t *testing.T) {
 		}
 
 		os.Args = originalArgs
+		_ = os.Unsetenv("property1")
+		_ = os.Unsetenv("property3")
+	})
+
+	t.Run("Test Fully configured property", func(t *testing.T) {
+		AddProperty("property1").
+			Required().
+			From(providers.JsonConfigurationProvider()).
+			From(providers.EnvironmentVariablesProvider())
+
+		Load()
+		func() {
+			defer func() {
+				if r := recover(); r == nil {
+					t.Error("Validate did not trigger panic")
+				}
+				log.Print("RECOVERED")
+			}()
+			Validate()
+		}()
+
+		os.Setenv("property1", "envValue1")
+		Load()
+		Validate()
+
+		if v, isType := Get("property1").(string); !isType {
+			t.Error("property1 is not of the expected type")
+		} else if v != "envValue1" {
+			t.Errorf("value for property1 is not the expected one: %v", v)
+		}
+
+		os.Args = []string{"app", "-property1", "cmlValue1", "-j", "tests/config.json"}
+		Load()
+		Validate()
+
+		if v, isType := Get("property1").(string); !isType {
+			t.Error("property1 is not of the expected type")
+		} else if v != "jsonValue1" {
+			t.Errorf("value for property1 is not the expected one: %v", v)
+		}
+
+		_ = os.Unsetenv("property1")
 	})
 }

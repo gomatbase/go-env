@@ -30,7 +30,10 @@ type Settings struct {
 }
 
 func AddProperty(name string) *property {
-	p := &property{name: name}
+	p := &property{
+		name:    name,
+		aliases: []string{name},
+	}
 	env.properties[name] = p
 	return p
 }
@@ -55,25 +58,25 @@ func Validate() []error {
 			result = append(result, errors.New("Property "+name+" not provided!"))
 		}
 	}
-	if env.settings.IgnoreRequired {
-		return result
+	if result != nil && !env.settings.IgnoreRequired {
+		panic(result)
 	}
-	panic(result)
+	return result
 }
 
 // Gets the value of a property if it's provided. Returns nil if not.
 func Get(name string) interface{} {
-	p, hit := env.properties[name]
+	var p, hit = env.properties[name]
 	var providerChain *[]Provider
 	var aliases *[]string
 	var convert func(value interface{}) interface{}
-	if !hit || p.providerChain == nil {
+	if !hit || p.providerRefChain == nil {
 		// no property was configured, but we still follow the default chain (CML and then OS ENV)
 		providerChain = &env.settings.DefaultProviderChain
 		aliases = &[]string{name}
 		convert = nil
 	} else {
-		providerChain = p.providerChain
+		providerChain = p.providerChain()
 		aliases = &p.aliases
 		convert = p.converter
 	}
@@ -112,4 +115,8 @@ func Refresh() []error {
 	}
 
 	return nil
+}
+
+func SetDefaultChain(provider ...*Provider) {
+
 }
