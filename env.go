@@ -117,6 +117,6 @@ func Refresh() []error {
 	return nil
 }
 
-func SetDefaultChain(provider ...*Provider) {
-
+func SetDefaultChain(provider ...Provider) {
+	env.settings.DefaultProviderChain = provider
 }
