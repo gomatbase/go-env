@@ -6,6 +6,7 @@ package env
 
 import (
 	"errors"
+
 	"github.com/gomatbase/go-env/providers"
 )
 
@@ -38,6 +39,7 @@ func AddProperty(name string) *property {
 	return p
 }
 
+// Load
 // initializes environment with provided configuration
 func Load() []error {
 	var result []error
@@ -50,6 +52,7 @@ func Load() []error {
 	return result
 }
 
+// Validate
 // validates if all non-string properties have been provided by a suitable format
 func Validate() []error {
 	var result []error
@@ -64,6 +67,7 @@ func Validate() []error {
 	return result
 }
 
+// Get
 // Gets the value of a property if it's provided. Returns nil if not.
 func Get(name string) interface{} {
 	var p, hit = env.properties[name]
@@ -104,6 +108,7 @@ func Get(name string) interface{} {
 	return nil
 }
 
+// Refresh
 // Refreshes Provider configurations. A provider does not need to guarantee a
 // refresh, but should have an error-free implementation then.
 func Refresh() []error {

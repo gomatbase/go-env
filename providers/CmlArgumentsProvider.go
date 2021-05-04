@@ -24,6 +24,7 @@ const (
 var cmlArgumentsProviderDefaultInstance *cmlArgumentsProvider
 var cmlapMutex = sync.Mutex{}
 
+// CmlArgumentsProvider
 // Gets or creates a singleton instance for the CML Arguments Provider
 func CmlArgumentsProvider() *cmlArgumentsProvider {
 	if cmlArgumentsProviderDefaultInstance == nil {
@@ -36,6 +37,7 @@ func CmlArgumentsProvider() *cmlArgumentsProvider {
 	return cmlArgumentsProviderDefaultInstance
 }
 
+// NewCmlArgumentsProvider
 // Creates a new CML Arguments Provider (doesn't affect default instance)
 func NewCmlArgumentsProvider() *cmlArgumentsProvider {
 	cmlap := &cmlArgumentsProvider{}
@@ -45,6 +47,7 @@ func NewCmlArgumentsProvider() *cmlArgumentsProvider {
 	return cmlap
 }
 
+// Get
 // Gets the value of the given property, if defined.
 func (cmlap *cmlArgumentsProvider) Get(name string) interface{} {
 	v, found := cmlap.switches[name]
@@ -54,6 +57,7 @@ func (cmlap *cmlArgumentsProvider) Get(name string) interface{} {
 	return nil
 }
 
+// Load
 // Parses the command line looking for switches and eventually assigning values
 // to them. It supports normal switches (-) long named switches (--) and assigns
 // single values when used with the assignment operator (=) or the whole value
@@ -96,6 +100,7 @@ func (cmlap *cmlArgumentsProvider) Load() error {
 	return nil
 }
 
+// Refresh
 // cml is fixed from start of application, no refresh is possible but we implement it anyway for testing purposes
 func (cmlap *cmlArgumentsProvider) Refresh() error {
 	return nil

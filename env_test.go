@@ -5,13 +5,14 @@
 package env
 
 import (
-	"github.com/gomatbase/go-env/providers"
 	"log"
 	"os"
 	"testing"
+
+	"github.com/gomatbase/go-env/providers"
 )
 
-func TestVariableExctraction(t *testing.T) {
+func TestVariableExtraction(t *testing.T) {
 
 	t.Run("Test ad-hoc cml extraction", func(t *testing.T) {
 		originalArgs := os.Args
@@ -110,7 +111,7 @@ func TestVariableExctraction(t *testing.T) {
 		os.Args = originalArgs
 	})
 
-	//Test defined environment variables with non-provided values and with/without default values
+	// Test defined environment variables with non-provided values and with/without default values
 	t.Run("Test unprovided properties with default values", func(t *testing.T) {
 		AddProperty("property1").WithDefaultValue("default1")
 		AddProperty("property2")
@@ -186,7 +187,7 @@ func TestVariableExctraction(t *testing.T) {
 			Validate()
 		}()
 
-		os.Setenv("property1", "envValue1")
+		_ = os.Setenv("property1", "envValue1")
 		Load()
 		Validate()
 

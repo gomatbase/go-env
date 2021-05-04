@@ -5,11 +5,12 @@
 package providers
 
 import (
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
 	"strings"
 	"sync"
+
+	"gopkg.in/yaml.v2"
 )
 
 type yamlConfigurationProvider struct {
@@ -35,6 +36,7 @@ var defaultYamlConfigurationProviderOptions = YamlConfigurationProviderOptions{
 var yamlConfigurationProviderDefaultInstance *yamlConfigurationProvider
 var ycpMutex = sync.Mutex{}
 
+// YamlConfigurationProvider
 // Gets or creates the default YAML configuration Provider instance (Singleton) with default Options
 func YamlConfigurationProvider() *yamlConfigurationProvider {
 	if yamlConfigurationProviderDefaultInstance == nil {
@@ -44,6 +46,7 @@ func YamlConfigurationProvider() *yamlConfigurationProvider {
 
 }
 
+// YamlConfigurationProviderWithOptions
 // Gets or creates the default JSON Configuration Provider instance (Singleton) with given Options. Options are
 // ignored if there is already a default instance initialized
 func YamlConfigurationProviderWithOptions(options YamlConfigurationProviderOptions) *yamlConfigurationProvider {
@@ -57,11 +60,13 @@ func YamlConfigurationProviderWithOptions(options YamlConfigurationProviderOptio
 	return yamlConfigurationProviderDefaultInstance
 }
 
+// NewYamlConfigurationProvider
 // Creates a new JSON configuration Provider
 func NewYamlConfigurationProvider() *yamlConfigurationProvider {
 	return NewYamlConfigurationProviderWithOptions(defaultYamlConfigurationProviderOptions)
 }
 
+// NewYamlConfigurationProviderWithOptions
 // Creates a new JSON configuration Provider with given options
 func NewYamlConfigurationProviderWithOptions(options YamlConfigurationProviderOptions) *yamlConfigurationProvider {
 	ycp := &yamlConfigurationProvider{
@@ -71,6 +76,7 @@ func NewYamlConfigurationProviderWithOptions(options YamlConfigurationProviderOp
 	return ycp
 }
 
+// Load
 // Loads the yaml configuration file. This is the only time when the filename is
 // resolved as the source is not expected to change for a refresh.
 func (ycp *yamlConfigurationProvider) Load() error {
@@ -85,6 +91,7 @@ func (ycp *yamlConfigurationProvider) Load() error {
 	return ycp.Refresh()
 }
 
+// Refresh
 // Reloads the configuration file. If no yaml file is configured, it is a nil operation.
 func (ycp *yamlConfigurationProvider) Refresh() error {
 	if ycp.options.Filename != "" {
@@ -99,6 +106,7 @@ func (ycp *yamlConfigurationProvider) Refresh() error {
 	return nil
 }
 
+// Get
 // Gets the given property if available.
 func (ycp *yamlConfigurationProvider) Get(name string) interface{} {
 	// first check if we allow cml override, and if we do, try to get it from there

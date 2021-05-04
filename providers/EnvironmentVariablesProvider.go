@@ -14,6 +14,7 @@ type environmentVariablesProvider struct{}
 var environmentVariablesProviderDefaultInstance *environmentVariablesProvider
 var evpMutex = sync.Mutex{}
 
+// EnvironmentVariablesProvider
 // Gets or creates the default Environment Variables Provider instance (Singleton)
 func EnvironmentVariablesProvider() *environmentVariablesProvider {
 	if environmentVariablesProviderDefaultInstance == nil {
@@ -27,17 +28,20 @@ func EnvironmentVariablesProvider() *environmentVariablesProvider {
 
 }
 
+// NewEnvironmentVariablesProvider
 // Creates a new Environment Variables Provider
 func NewEnvironmentVariablesProvider() *environmentVariablesProvider {
 	evp := &environmentVariablesProvider{}
 	return evp
 }
 
+// Load
 // Loads the environment variables. This is a nil operation as the environment variables are always taken directly from os calls
 func (evp *environmentVariablesProvider) Load() error {
 	return nil
 }
 
+// Refresh
 // Refreshes the environment variables. This is a nil operation as the environment variables are always taken directly from os calls
 func (evp *environmentVariablesProvider) Refresh() error {
 	return nil

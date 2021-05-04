@@ -35,6 +35,7 @@ var defaultJsonConfigurationProviderOptions = JsonConfigurationProviderOptions{
 var jsonConfigurationProviderDefaultInstance *jsonConfigurationProvider
 var jcpMutex = sync.Mutex{}
 
+// JsonConfigurationProvider
 // Gets or creates the default JSON configuration Provider instance (Singleton) with default Options
 func JsonConfigurationProvider() *jsonConfigurationProvider {
 	if jsonConfigurationProviderDefaultInstance == nil {
@@ -44,6 +45,7 @@ func JsonConfigurationProvider() *jsonConfigurationProvider {
 
 }
 
+// JsonConfigurationProviderWithOptions
 // Gets or creates the default JSON Configuration Provider instance (Singleton) with given Options. Options are
 // ignored if there is already a default instance initialized
 func JsonConfigurationProviderWithOptions(options JsonConfigurationProviderOptions) *jsonConfigurationProvider {
@@ -57,11 +59,13 @@ func JsonConfigurationProviderWithOptions(options JsonConfigurationProviderOptio
 	return jsonConfigurationProviderDefaultInstance
 }
 
+// NewJsonConfigurationProvider
 // Creates a new JSON configuration Provider
 func NewJsonConfigurationProvider() *jsonConfigurationProvider {
 	return NewJsonConfigurationProviderWithOptions(defaultJsonConfigurationProviderOptions)
 }
 
+// NewJsonConfigurationProviderWithOptions
 // Creates a new JSON configuration Provider with given options
 func NewJsonConfigurationProviderWithOptions(options JsonConfigurationProviderOptions) *jsonConfigurationProvider {
 	jcp := &jsonConfigurationProvider{
@@ -71,6 +75,7 @@ func NewJsonConfigurationProviderWithOptions(options JsonConfigurationProviderOp
 	return jcp
 }
 
+// Load
 // Loads the json configuration file. This is the only time when the filename is
 // resolved as the source is not expected to change for a refresh.
 func (jcp *jsonConfigurationProvider) Load() error {
@@ -85,6 +90,7 @@ func (jcp *jsonConfigurationProvider) Load() error {
 	return jcp.Refresh()
 }
 
+// Refresh
 // Reloads the configuration file. If no json file is configured, it is a nil operation.
 func (jcp *jsonConfigurationProvider) Refresh() error {
 	if jcp.options.Filename != "" {
@@ -99,6 +105,7 @@ func (jcp *jsonConfigurationProvider) Refresh() error {
 	return nil
 }
 
+// Get
 // Gets the given property from the json file, if available.
 func (jcp *jsonConfigurationProvider) Get(name string) interface{} {
 	// first check if we allow cml override, and if we do, try to get it from there
