@@ -5,16 +5,23 @@
 package env
 
 import (
-	"errors"
+	"sync"
 
 	"github.com/gomatbase/go-env/providers"
+	"github.com/gomatbase/go-error"
+)
+
+const (
+	ErrVariableAlreadyExists = err.Error("Variable name already exists.")
 )
 
 var env = &struct {
 	properties map[string]*property
+	variables  map[string]*variable
 	settings   Settings
 }{
 	properties: make(map[string]*property),
+	variables:  make(map[string]*variable),
 	settings: Settings{
 		DefaultProviderChain: []Provider{
 			providers.CmlArgumentsProvider(),
@@ -24,6 +31,8 @@ var env = &struct {
 		},
 	},
 }
+
+var lock = sync.Mutex{}
 
 type Settings struct {
 	IgnoreRequired       bool
@@ -37,6 +46,19 @@ func AddProperty(name string) *property {
 	}
 	env.properties[name] = p
 	return p
+}
+
+func addVar(v *variable) error {
+	lock.Lock()
+	defer lock.Unlock()
+
+	if _, found := env.variables[v.name]; found {
+		return ErrVariableAlreadyExists
+	}
+
+	env.variables[v.name] = v
+
+	return nil
 }
 
 // Load
@@ -57,8 +79,8 @@ func Load() []error {
 func Validate() []error {
 	var result []error
 	for name, property := range env.properties {
-		if property.required && Get(name) == nil {
-			result = append(result, errors.New("Property "+name+" not provided!"))
+		if property.required && GetProperty(name) == nil {
+			result = append(result, err.Error("Property "+name+" not provided!"))
 		}
 	}
 	if result != nil && !env.settings.IgnoreRequired {
@@ -67,9 +89,9 @@ func Validate() []error {
 	return result
 }
 
-// Get
+// GetProperty
 // Gets the value of a property if it's provided. Returns nil if not.
-func Get(name string) interface{} {
+func GetProperty(name string) interface{} {
 	var p, hit = env.properties[name]
 	var providerChain *[]Provider
 	var aliases *[]string
@@ -102,6 +124,47 @@ func Get(name string) interface{} {
 	// value not found, check if it's a defined property to get the default value
 	if p != nil {
 		return p.defaultValue
+	}
+
+	// nothing found and no default value
+	return nil
+}
+
+// Get
+// Gets the value of a variable if it's provided. Returns nil if not.
+func Get(name string) interface{} {
+	var v, hit = env.variables[name]
+	var providerChain *[]Provider
+	var aliases *[]string
+	var convert func(value interface{}) interface{}
+	if !hit || v.providerRefChain == nil {
+		// no property was configured, but we still follow the default chain (CML and then OS ENV)
+		providerChain = &env.settings.DefaultProviderChain
+		aliases = &[]string{name}
+		convert = nil
+	} else {
+		providerChain = v.providerChain()
+		aliases = &v.aliases
+		convert = v.converter
+	}
+
+	// search the provider chain for the property
+	var value interface{}
+	for _, provider := range *providerChain {
+		for _, alias := range *aliases {
+			value = provider.Get(alias)
+			if value != nil {
+				if convert != nil {
+					value = convert(value)
+				}
+				return value
+			}
+		}
+	}
+
+	// value not found, check if it's a defined property to get the default value
+	if v != nil {
+		return v.defaultValue
 	}
 
 	// nothing found and no default value
