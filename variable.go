@@ -9,8 +9,9 @@ import "sync"
 type variable struct {
 	name             string
 	required         bool
-	aliases          []string
 	defaultValue     interface{}
+	value            interface{}
+	sources          []Source
 	providerRefChain []providerRef
 	chain            []Provider
 	converter        func(value interface{}) interface{}
@@ -18,11 +19,16 @@ type variable struct {
 }
 
 func Var(name string) *variable {
-	return &variable{name: name}
+	return &variable{name: name, sources: make([]Source, 0)}
 }
 
 func (v *variable) Default(defaultValue interface{}) *variable {
 	v.defaultValue = defaultValue
+	return v
+}
+
+func (v *variable) From(source Source) *variable {
+	v.sources = append(v.sources, source)
 	return v
 }
 

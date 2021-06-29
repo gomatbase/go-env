@@ -7,7 +7,6 @@ package env
 import (
 	"sync"
 
-	"github.com/gomatbase/go-env/providers"
 	"github.com/gomatbase/go-error"
 )
 
@@ -24,10 +23,15 @@ var env = &struct {
 	variables:  make(map[string]*variable),
 	settings: Settings{
 		DefaultProviderChain: []Provider{
-			providers.CmlArgumentsProvider(),
-			providers.JsonConfigurationProvider(),
-			providers.YamlConfigurationProvider(),
-			providers.EnvironmentVariablesProvider(),
+			CmlArgumentsProvider(),
+			JsonConfigurationProvider(),
+			YamlConfigurationProvider(),
+			EnvironmentVariablesProvider(),
+		},
+		DefaultSources: []Source{
+			&cmlArgumentsSource{
+				provider: CmlArgumentsProvider(),
+			},
 		},
 	},
 }
@@ -37,6 +41,7 @@ var lock = sync.Mutex{}
 type Settings struct {
 	IgnoreRequired       bool
 	DefaultProviderChain []Provider
+	DefaultSources       []Source
 }
 
 func AddProperty(name string) *property {
@@ -133,42 +138,50 @@ func GetProperty(name string) interface{} {
 // Get
 // Gets the value of a variable if it's provided. Returns nil if not.
 func Get(name string) interface{} {
-	var v, hit = env.variables[name]
-	var providerChain *[]Provider
-	var aliases *[]string
+	var v, found = env.variables[name]
+
+	if found {
+		v.mutex.Lock()
+		if v.value != nil {
+			defer v.mutex.Unlock()
+			return v.value
+		}
+	}
+
+	var sources *[]Source
 	var convert func(value interface{}) interface{}
-	if !hit || v.providerRefChain == nil {
-		// no property was configured, but we still follow the default chain (CML and then OS ENV)
-		providerChain = &env.settings.DefaultProviderChain
-		aliases = &[]string{name}
+	if !found || len(v.sources) == 0 {
+		// either the variable was not found or no sources were defined
+		sources = &env.settings.DefaultSources
 		convert = nil
 	} else {
-		providerChain = v.providerChain()
-		aliases = &v.aliases
+		sources = &v.sources
 		convert = v.converter
 	}
 
 	// search the provider chain for the property
 	var value interface{}
-	for _, provider := range *providerChain {
-		for _, alias := range *aliases {
-			value = provider.Get(alias)
-			if value != nil {
-				if convert != nil {
-					value = convert(value)
-				}
-				return value
+	for _, source := range *sources {
+		value = source.Provider().Get(name)
+		if value != nil {
+			if convert != nil {
+				value = convert(value)
 			}
+			break
 		}
 	}
 
-	// value not found, check if it's a defined property to get the default value
-	if v != nil {
-		return v.defaultValue
+	// value not found, check if it's a defined variable to get the default value
+	if found {
+		if value == nil {
+			value = v.defaultValue
+		}
+		v.value = value
+		v.mutex.Unlock()
 	}
 
-	// nothing found and no default value
-	return nil
+	// update variable value
+	return value
 }
 
 // Refresh

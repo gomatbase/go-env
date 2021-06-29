@@ -2,7 +2,7 @@
 // Since 24/09/2020 By GOM
 // Licensed under MIT License
 
-package providers
+package env
 
 import (
 	"os"
@@ -13,6 +13,18 @@ import (
 type cmlArgumentsProvider struct {
 	args     []string
 	switches map[string]string
+}
+
+type cmlArgumentsSource struct {
+	provider *cmlArgumentsProvider
+}
+
+func (cmlas *cmlArgumentsSource) Provider() Provider {
+	return cmlas.provider
+}
+
+func (cmlas *cmlArgumentsSource) Config() interface{} {
+	return cmlas
 }
 
 const (
@@ -35,6 +47,12 @@ func CmlArgumentsProvider() *cmlArgumentsProvider {
 		cmlapMutex.Unlock()
 	}
 	return cmlArgumentsProviderDefaultInstance
+}
+
+func CmlArgumentsSource() *cmlArgumentsSource {
+	return &cmlArgumentsSource{
+		provider: CmlArgumentsProvider(),
+	}
 }
 
 // NewCmlArgumentsProvider
@@ -75,6 +93,11 @@ func (cmlap *cmlArgumentsProvider) Load() error {
 				currentSwitch = arg[2:]
 			} else {
 				currentSwitch = arg[1:]
+			}
+
+			// check if it's a variable
+			if currentSwitch[0] == 'V' {
+				currentSwitch = currentSwitch[1:]
 			}
 
 			// let's check if it holds an assignment

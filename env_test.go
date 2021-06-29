@@ -8,8 +8,6 @@ import (
 	"log"
 	"os"
 	"testing"
-
-	"github.com/gomatbase/go-env/providers"
 )
 
 var originalArguments = os.Args
@@ -142,6 +140,20 @@ func TestConfigureVariables(t *testing.T) {
 		}
 	})
 
+	t.Run("Test configured cml variable", func(t *testing.T) {
+		reset()
+		Var("v1").Default("default1").From(CmlArgumentsSource())
+
+		os.Args = []string{"app", "-Vv1", "cmlValue1"}
+		Load()
+
+		if v, isType := Get("v1").(string); !isType {
+			t.Error("v1 is not of the expected type")
+		} else if v != "cmlValue1" {
+			t.Error("value for v1 is not the expected one: ", v)
+		}
+	})
+
 	// Test defined environment variables with non-provided values and with/without default values
 	t.Run("Test unprovided properties with default values", func(t *testing.T) {
 		reset()
@@ -202,8 +214,8 @@ func TestConfigureVariables(t *testing.T) {
 		reset()
 		AddProperty("property1").
 			Required().
-			From(providers.JsonConfigurationProvider()).
-			From(providers.EnvironmentVariablesProvider())
+			From(JsonConfigurationProvider()).
+			From(EnvironmentVariablesProvider())
 
 		Load()
 		func() {

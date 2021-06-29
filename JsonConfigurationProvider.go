@@ -2,7 +2,7 @@
 // Since 24/09/2020 By GOM
 // Licensed under MIT License
 
-package providers
+package env
 
 import (
 	"encoding/json"
