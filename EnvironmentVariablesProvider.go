@@ -11,28 +11,27 @@ import (
 
 type environmentVariablesProvider struct{}
 
-var environmentVariablesProviderDefaultInstance *environmentVariablesProvider
+type environmentVariablesSource struct{}
+
+func (evs *environmentVariablesSource) Provider() Provider {
+	return environmentVariablesProviderInstance
+}
+
+func (evs *environmentVariablesSource) Config() interface{} {
+	return evs
+}
+
+var environmentVariablesProviderInstance = &environmentVariablesProvider{}
 var evpMutex = sync.Mutex{}
 
 // EnvironmentVariablesProvider
-// Gets or creates the default Environment Variables Provider instance (Singleton)
+// Gets the Environment Variables Provider instance (Singleton)
 func EnvironmentVariablesProvider() *environmentVariablesProvider {
-	if environmentVariablesProviderDefaultInstance == nil {
-		evpMutex.Lock() // lock only for the moment where the default instance might be updated
-		if environmentVariablesProviderDefaultInstance == nil {
-			environmentVariablesProviderDefaultInstance = NewEnvironmentVariablesProvider()
-		}
-		evpMutex.Unlock()
-	}
-	return environmentVariablesProviderDefaultInstance
-
+	return environmentVariablesProviderInstance
 }
 
-// NewEnvironmentVariablesProvider
-// Creates a new Environment Variables Provider
-func NewEnvironmentVariablesProvider() *environmentVariablesProvider {
-	evp := &environmentVariablesProvider{}
-	return evp
+func EnvironmentVariablesSource() *environmentVariablesSource {
+	return &environmentVariablesSource{}
 }
 
 // Load

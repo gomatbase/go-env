@@ -140,9 +140,23 @@ func TestConfigureVariables(t *testing.T) {
 		}
 	})
 
+	t.Run("Test configured environment variable", func(t *testing.T) {
+		reset()
+		Var("v1").Default("default1").From(EnvironmentVariablesSource()).Add()
+
+		os.Setenv("v1", "envValue1")
+		Load()
+
+		if v, isType := Get("v1").(string); !isType {
+			t.Error("v1 is not of the expected type")
+		} else if v != "envValue1" {
+			t.Error("value for v1 is not the expected one: ", v)
+		}
+	})
+
 	t.Run("Test configured cml variable", func(t *testing.T) {
 		reset()
-		Var("v1").Default("default1").From(CmlArgumentsSource())
+		Var("v1").Default("default1").From(CmlArgumentsSource()).Add()
 
 		os.Args = []string{"app", "-Vv1", "cmlValue1"}
 		Load()
