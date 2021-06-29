@@ -15,12 +15,10 @@ type cmlArgumentsProvider struct {
 	switches map[string]string
 }
 
-type cmlArgumentsSource struct {
-	provider *cmlArgumentsProvider
-}
+type cmlArgumentsSource struct{}
 
 func (cmlas *cmlArgumentsSource) Provider() Provider {
-	return cmlas.provider
+	return cmlArgumentsProviderInstance
 }
 
 func (cmlas *cmlArgumentsSource) Config() interface{} {
@@ -33,31 +31,22 @@ const (
 	cmlapVALUE
 )
 
-var cmlArgumentsProviderDefaultInstance *cmlArgumentsProvider
+var cmlArgumentsProviderInstance = newCmlArgumentsProvider()
 var cmlapMutex = sync.Mutex{}
 
 // CmlArgumentsProvider
-// Gets or creates a singleton instance for the CML Arguments Provider
+// Gets the singleton instance for the CML Arguments Provider
 func CmlArgumentsProvider() *cmlArgumentsProvider {
-	if cmlArgumentsProviderDefaultInstance == nil {
-		cmlapMutex.Lock() // lock only for the moment where the default instance might be updated
-		if cmlArgumentsProviderDefaultInstance == nil {
-			cmlArgumentsProviderDefaultInstance = NewCmlArgumentsProvider()
-		}
-		cmlapMutex.Unlock()
-	}
-	return cmlArgumentsProviderDefaultInstance
+	return cmlArgumentsProviderInstance
 }
 
 func CmlArgumentsSource() *cmlArgumentsSource {
-	return &cmlArgumentsSource{
-		provider: CmlArgumentsProvider(),
-	}
+	return &cmlArgumentsSource{}
 }
 
-// NewCmlArgumentsProvider
+// newCmlArgumentsProvider
 // Creates a new CML Arguments Provider (doesn't affect default instance)
-func NewCmlArgumentsProvider() *cmlArgumentsProvider {
+func newCmlArgumentsProvider() *cmlArgumentsProvider {
 	cmlap := &cmlArgumentsProvider{}
 	if e := cmlap.Refresh(); e != nil {
 		panic(e)

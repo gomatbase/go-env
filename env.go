@@ -29,9 +29,8 @@ var env = &struct {
 			EnvironmentVariablesProvider(),
 		},
 		DefaultSources: []Source{
-			&cmlArgumentsSource{
-				provider: CmlArgumentsProvider(),
-			},
+			&cmlArgumentsSource{},
+			&environmentVariablesSource{},
 		},
 	},
 }
