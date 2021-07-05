@@ -17,6 +17,18 @@ type jsonConfigurationProvider struct {
 	json    map[string]interface{}
 }
 
+type jsonConfigurationSource struct {
+	provider *jsonConfigurationProvider
+}
+
+func (jcs *jsonConfigurationSource) Provider() Provider {
+	return jcs.provider
+}
+
+func (jcs *jsonConfigurationSource) Config() interface{} {
+	return jcs
+}
+
 type JsonConfigurationProviderOptions struct {
 	FileFromCml               bool
 	CmlSwitch                 string
@@ -59,12 +71,6 @@ func JsonConfigurationProviderWithOptions(options JsonConfigurationProviderOptio
 	return jsonConfigurationProviderDefaultInstance
 }
 
-// NewJsonConfigurationProvider
-// Creates a new JSON configuration Provider
-func NewJsonConfigurationProvider() *jsonConfigurationProvider {
-	return NewJsonConfigurationProviderWithOptions(defaultJsonConfigurationProviderOptions)
-}
-
 // NewJsonConfigurationProviderWithOptions
 // Creates a new JSON configuration Provider with given options
 func NewJsonConfigurationProviderWithOptions(options JsonConfigurationProviderOptions) *jsonConfigurationProvider {
@@ -73,6 +79,12 @@ func NewJsonConfigurationProviderWithOptions(options JsonConfigurationProviderOp
 	}
 	_ = jcp.Load()
 	return jcp
+}
+
+func JsonConfigurationSource() Source {
+	return &jsonConfigurationSource{
+		provider: JsonConfigurationProvider(),
+	}
 }
 
 // Load
