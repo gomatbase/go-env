@@ -182,6 +182,20 @@ func TestConfigureVariables(t *testing.T) {
 		}
 	})
 
+	t.Run("Test configured yaml variable", func(t *testing.T) {
+		reset()
+		Var("property1").Default("default1").From(YamlConfigurationSource()).Add()
+
+		os.Args = []string{"app", "-y", "tests/config.yml"}
+		Load()
+
+		if v, isType := Get("property1").(string); !isType {
+			t.Error("property1 is not of the expected type")
+		} else if v != "yamlValue1" {
+			t.Error("value for property1 is not the expected one: ", v)
+		}
+	})
+
 	// Test defined environment variables with non-provided values and with/without default values
 	t.Run("Test unprovided properties with default values", func(t *testing.T) {
 		reset()

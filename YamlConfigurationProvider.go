@@ -18,6 +18,18 @@ type yamlConfigurationProvider struct {
 	yaml    map[interface{}]interface{}
 }
 
+type yamlConfigurationSource struct {
+	provider *yamlConfigurationProvider
+}
+
+func (ycs *yamlConfigurationSource) Provider() Provider {
+	return ycs.provider
+}
+
+func (ycs *yamlConfigurationSource) Config() interface{} {
+	return ycs
+}
+
 type YamlConfigurationProviderOptions struct {
 	FileFromCml               bool
 	CmlSwitch                 string
@@ -74,6 +86,12 @@ func NewYamlConfigurationProviderWithOptions(options YamlConfigurationProviderOp
 	}
 	_ = ycp.Refresh()
 	return ycp
+}
+
+func YamlConfigurationSource() Source {
+	return &yamlConfigurationSource{
+		provider: YamlConfigurationProvider(),
+	}
 }
 
 // Load
