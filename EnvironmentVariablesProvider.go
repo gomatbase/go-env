@@ -6,12 +6,13 @@ package env
 
 import (
 	"os"
-	"sync"
 )
 
 type environmentVariablesProvider struct{}
 
-type environmentVariablesSource struct{}
+type environmentVariablesSource struct {
+	name *string
+}
 
 func (evs *environmentVariablesSource) Provider() Provider {
 	return environmentVariablesProviderInstance
@@ -21,8 +22,12 @@ func (evs *environmentVariablesSource) Config() interface{} {
 	return evs
 }
 
+func (evs *environmentVariablesSource) Name(name string) *environmentVariablesSource {
+	evs.name = &name
+	return evs
+}
+
 var environmentVariablesProviderInstance = &environmentVariablesProvider{}
-var evpMutex = sync.Mutex{}
 
 // EnvironmentVariablesProvider
 // Gets the Environment Variables Provider instance (Singleton)
@@ -47,7 +52,14 @@ func (evp *environmentVariablesProvider) Refresh() error {
 }
 
 func (evp *environmentVariablesProvider) Get(name string, config interface{}) interface{} {
-	if v, found := os.LookupEnv(name); found {
+	variableName := name
+	if source, isType := config.(*environmentVariablesSource); isType {
+		if source.name != nil {
+			variableName = *source.name
+		}
+	}
+
+	if v, found := os.LookupEnv(variableName); found {
 		return v
 	}
 	return nil

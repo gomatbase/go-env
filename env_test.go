@@ -142,15 +142,45 @@ func TestConfigureVariables(t *testing.T) {
 
 	t.Run("Test configured environment variable", func(t *testing.T) {
 		reset()
-		_ = Var("v1").Default("default1").From(EnvironmentVariablesSource()).Add()
+		_ = Var("v1").
+			Default("default1").
+			From(EnvironmentVariablesSource()).
+			Add()
+		_ = Var("v2").
+			Default("default2").
+			From(EnvironmentVariablesSource()).
+			Add()
+		_ = Var("v3").
+			From(EnvironmentVariablesSource()).
+			Add()
+		_ = Var("v4").
+			From(EnvironmentVariablesSource().Name("something")).
+			Add()
 
 		_ = os.Setenv("v1", "envValue1")
+		_ = os.Setenv("something", "envValue2")
 		Load()
 
 		if v, isType := Get("v1").(string); !isType {
 			t.Error("v1 is not of the expected type")
 		} else if v != "envValue1" {
 			t.Error("value for v1 is not the expected one: ", v)
+		}
+
+		if v, isType := Get("v2").(string); !isType {
+			t.Error("v2 is not of the expected type")
+		} else if v != "default2" {
+			t.Error("value for v2 is not the expected one: ", v)
+		}
+
+		if Get("v3") != nil {
+			t.Error("v3 was found!")
+		}
+
+		if v, isType := Get("v4").(string); !isType {
+			t.Error("v4 is not of the expected type")
+		} else if v != "envValue2" {
+			t.Error("value for v4 is not the expected one: ", v)
 		}
 	})
 
