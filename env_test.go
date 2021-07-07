@@ -124,8 +124,8 @@ func TestConfigureVariables(t *testing.T) {
 
 	t.Run("Test unprovided variables with default values", func(t *testing.T) {
 		reset()
-		Var("v1").Default("default1").Add()
-		Var("v2").Add()
+		_ = Var("v1").Default("default1").Add()
+		_ = Var("v2").Add()
 
 		if v, isType := Get("v1").(string); !isType {
 			t.Error("v1 is not of the expected type")
@@ -142,9 +142,9 @@ func TestConfigureVariables(t *testing.T) {
 
 	t.Run("Test configured environment variable", func(t *testing.T) {
 		reset()
-		Var("v1").Default("default1").From(EnvironmentVariablesSource()).Add()
+		_ = Var("v1").Default("default1").From(EnvironmentVariablesSource()).Add()
 
-		os.Setenv("v1", "envValue1")
+		_ = os.Setenv("v1", "envValue1")
 		Load()
 
 		if v, isType := Get("v1").(string); !isType {
@@ -156,7 +156,7 @@ func TestConfigureVariables(t *testing.T) {
 
 	t.Run("Test configured cml variable", func(t *testing.T) {
 		reset()
-		Var("v1").Default("default1").From(CmlArgumentsSource()).Add()
+		_ = Var("v1").Default("default1").From(CmlArgumentsSource()).Add()
 
 		os.Args = []string{"app", "-Vv1", "cmlValue1"}
 		Load()
@@ -170,12 +170,16 @@ func TestConfigureVariables(t *testing.T) {
 
 	t.Run("Test configured json variables", func(t *testing.T) {
 		reset()
-		Var("property1").
+		_ = Var("property1").
 			Default("default1").
 			From(JsonConfigurationSource()).
 			Add()
-		Var("property2").
+		_ = Var("property2").
 			From(JsonConfigurationSource().Name("section.property2")).
+			Add()
+		_ = Var("property5").
+			Default("default5").
+			From(JsonConfigurationSource()).
 			Add()
 
 		os.Args = []string{"app", "-j", "tests/config.json"}
@@ -203,6 +207,12 @@ func TestConfigureVariables(t *testing.T) {
 			t.Error("property4 was found!")
 		}
 
+		if v, isType := Get("property5").(string); !isType {
+			t.Error("property5 is not of the expected type")
+		} else if v != "default5" {
+			t.Error("value for property5 is not the expected one: ", v)
+		}
+
 		if v, isType := Get("section.property1").(string); !isType {
 			t.Error("section.property1 is not of the expected type")
 		} else if v != "sectionJsonValue1" {
@@ -212,7 +222,7 @@ func TestConfigureVariables(t *testing.T) {
 
 	t.Run("Test configured yaml variable", func(t *testing.T) {
 		reset()
-		Var("property1").Default("default1").From(YamlConfigurationSource()).Add()
+		_ = Var("property1").Default("default1").From(YamlConfigurationSource()).Add()
 
 		os.Args = []string{"app", "-y", "tests/config.yml"}
 		Load()
