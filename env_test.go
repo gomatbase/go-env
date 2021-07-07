@@ -222,7 +222,17 @@ func TestConfigureVariables(t *testing.T) {
 
 	t.Run("Test configured yaml variable", func(t *testing.T) {
 		reset()
-		_ = Var("property1").Default("default1").From(YamlConfigurationSource()).Add()
+		_ = Var("property1").
+			Default("default1").
+			From(YamlConfigurationSource()).
+			Add()
+		_ = Var("property2").
+			From(YamlConfigurationSource().Name("section.property2")).
+			Add()
+		_ = Var("property5").
+			Default("default5").
+			From(YamlConfigurationSource()).
+			Add()
 
 		os.Args = []string{"app", "-y", "tests/config.yml"}
 		Load()
@@ -231,6 +241,34 @@ func TestConfigureVariables(t *testing.T) {
 			t.Error("property1 is not of the expected type")
 		} else if v != "yamlValue1" {
 			t.Error("value for property1 is not the expected one: ", v)
+		}
+
+		if v, isType := Get("property2").(string); !isType {
+			t.Error("property2 is not of the expected type")
+		} else if v != "sectionYamlValue2" {
+			t.Error("value for property2 is not the expected one: ", v)
+		}
+
+		if v, isType := Get("property3").(string); !isType {
+			t.Error("property3 is not of the expected type")
+		} else if v != "yamlValue3" {
+			t.Error("value for property3 is not the expected one: ", v)
+		}
+
+		if Get("property4") != nil {
+			t.Error("property4 was found!")
+		}
+
+		if v, isType := Get("property5").(string); !isType {
+			t.Error("property5 is not of the expected type")
+		} else if v != "default5" {
+			t.Error("value for property5 is not the expected one: ", v)
+		}
+
+		if v, isType := Get("section.property1").(string); !isType {
+			t.Error("section.property1 is not of the expected type")
+		} else if v != "sectionYamlValue1" {
+			t.Error("value for section.property1 is not the expected one: ", v)
 		}
 	})
 

@@ -20,6 +20,7 @@ type yamlConfigurationProvider struct {
 
 type yamlConfigurationSource struct {
 	provider *yamlConfigurationProvider
+	name     *string
 }
 
 func (ycs *yamlConfigurationSource) Provider() Provider {
@@ -27,6 +28,11 @@ func (ycs *yamlConfigurationSource) Provider() Provider {
 }
 
 func (ycs *yamlConfigurationSource) Config() interface{} {
+	return ycs
+}
+
+func (ycs *yamlConfigurationSource) Name(name string) *yamlConfigurationSource {
+	ycs.name = &name
 	return ycs
 }
 
@@ -88,7 +94,7 @@ func NewYamlConfigurationProviderWithOptions(options YamlConfigurationProviderOp
 	return ycp
 }
 
-func YamlConfigurationSource() Source {
+func YamlConfigurationSource() *yamlConfigurationSource {
 	return &yamlConfigurationSource{
 		provider: YamlConfigurationProvider(),
 	}
@@ -127,14 +133,24 @@ func (ycp *yamlConfigurationProvider) Refresh() error {
 // Get
 // Gets the given property if available.
 func (ycp *yamlConfigurationProvider) Get(name string, config interface{}) interface{} {
+	variableName := name
+	// let's check if a configuration is passed and if it's the right type
+	if config != nil {
+		if source, isType := config.(*yamlConfigurationSource); isType {
+			if source.name != nil {
+				variableName = *source.name
+			}
+		}
+	}
+
 	// first check if we allow cml override, and if we do, try to get it from there
 	if ycp.options.CmlPropertyOverride {
-		if v := CmlArgumentsProvider().Get(ycp.options.CmlPropertyOverrideSwitch+name, nil); v != nil {
+		if v := CmlArgumentsProvider().Get(ycp.options.CmlPropertyOverrideSwitch+variableName, nil); v != nil {
 			return v
 		}
 	}
 	// first split the parcels from the dot notation
-	parcels := strings.Split(name, ".")
+	parcels := strings.Split(variableName, ".")
 	var currentBlock *map[interface{}]interface{}
 	var currentValue interface{} = ycp.yaml
 	for _, p := range parcels {
