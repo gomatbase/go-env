@@ -186,15 +186,44 @@ func TestConfigureVariables(t *testing.T) {
 
 	t.Run("Test configured cml variable", func(t *testing.T) {
 		reset()
-		_ = Var("v1").Default("default1").From(CmlArgumentsSource()).Add()
+		_ = Var("v1").
+			Default("default1").
+			From(CmlArgumentsSource()).
+			Add()
+		_ = Var("v2").
+			Default("default2").
+			From(CmlArgumentsSource()).
+			Add()
+		_ = Var("v3").
+			From(CmlArgumentsSource()).
+			Add()
+		_ = Var("v4").
+			From(CmlArgumentsSource().Name("something")).
+			Add()
 
-		os.Args = []string{"app", "-Vv1", "cmlValue1"}
+		os.Args = []string{"app", "-Vv1", "cmlValue1", "-Vsomething", "cmlValue2"}
 		Load()
 
 		if v, isType := Get("v1").(string); !isType {
 			t.Error("v1 is not of the expected type")
 		} else if v != "cmlValue1" {
 			t.Error("value for v1 is not the expected one: ", v)
+		}
+
+		if v, isType := Get("v2").(string); !isType {
+			t.Error("v2 is not of the expected type")
+		} else if v != "default2" {
+			t.Error("value for v2 is not the expected one: ", v)
+		}
+
+		if Get("v3") != nil {
+			t.Error("v3 was found!")
+		}
+
+		if v, isType := Get("v4").(string); !isType {
+			t.Error("v4 is not of the expected type")
+		} else if v != "cmlValue2" {
+			t.Error("value for v4 is not the expected one: ", v)
 		}
 	})
 

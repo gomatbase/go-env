@@ -7,7 +7,6 @@ package env
 import (
 	"os"
 	"strings"
-	"sync"
 )
 
 type cmlArgumentsProvider struct {
@@ -15,13 +14,20 @@ type cmlArgumentsProvider struct {
 	switches map[string]string
 }
 
-type cmlArgumentsSource struct{}
+type cmlArgumentsSource struct {
+	name *string
+}
 
 func (cmlas *cmlArgumentsSource) Provider() Provider {
 	return cmlArgumentsProviderInstance
 }
 
 func (cmlas *cmlArgumentsSource) Config() interface{} {
+	return cmlas
+}
+
+func (cmlas *cmlArgumentsSource) Name(name string) *cmlArgumentsSource {
+	cmlas.name = &name
 	return cmlas
 }
 
@@ -32,7 +38,6 @@ const (
 )
 
 var cmlArgumentsProviderInstance = newCmlArgumentsProvider()
-var cmlapMutex = sync.Mutex{}
 
 // CmlArgumentsProvider
 // Gets the singleton instance for the CML Arguments Provider
@@ -57,7 +62,14 @@ func newCmlArgumentsProvider() *cmlArgumentsProvider {
 // Get
 // Gets the value of the given property, if defined.
 func (cmlap *cmlArgumentsProvider) Get(name string, config interface{}) interface{} {
-	v, found := cmlap.switches[name]
+	variableName := name
+	if source, isType := config.(*cmlArgumentsSource); isType {
+		if source.name != nil {
+			variableName = *source.name
+		}
+	}
+
+	v, found := cmlap.switches[variableName]
 	if found {
 		return v
 	}
