@@ -15,12 +15,10 @@ const (
 )
 
 var env = &struct {
-	properties map[string]*property
-	variables  map[string]*variable
-	settings   Settings
+	variables map[string]*variable
+	settings  Settings
 }{
-	properties: make(map[string]*property),
-	variables:  make(map[string]*variable),
+	variables: make(map[string]*variable),
 	settings: Settings{
 		DefaultProviderChain: []Provider{
 			CmlArgumentsProvider(),
@@ -43,15 +41,6 @@ type Settings struct {
 	IgnoreRequired       bool
 	DefaultProviderChain []Provider
 	DefaultSources       []Source
-}
-
-func AddProperty(name string) *property {
-	p := &property{
-		name:    name,
-		aliases: []string{name},
-	}
-	env.properties[name] = p
-	return p
 }
 
 func addVar(v *variable) error {
@@ -80,61 +69,20 @@ func Load() []error {
 	return result
 }
 
-// Validate
-// validates if all non-string properties have been provided by a suitable format
-func Validate() []error {
-	var result []error
-	for name, property := range env.properties {
-		if property.required && GetProperty(name) == nil {
-			result = append(result, err.Error("Property "+name+" not provided!"))
-		}
-	}
-	if result != nil && !env.settings.IgnoreRequired {
-		panic(result)
-	}
-	return result
-}
-
-// GetProperty
-// Gets the value of a property if it's provided. Returns nil if not.
-func GetProperty(name string) interface{} {
-	var p, hit = env.properties[name]
-	var providerChain *[]Provider
-	var aliases *[]string
-	var convert func(value interface{}) interface{}
-	if !hit || p.providerRefChain == nil {
-		// no property was configured, but we still follow the default chain (CML and then OS ENV)
-		providerChain = &env.settings.DefaultProviderChain
-		aliases = &[]string{name}
-		convert = nil
-	} else {
-		providerChain = p.providerChain()
-		aliases = &p.aliases
-		convert = p.converter
-	}
-
-	// search the provider chain for the property
-	var value interface{}
-	for _, provider := range *providerChain {
-		for _, alias := range *aliases {
-			value = provider.Get(alias, nil)
-			if value != nil {
-				if convert != nil {
-					value = convert(value)
-				}
-				return value
-			}
-		}
-	}
-
-	// value not found, check if it's a defined property to get the default value
-	if p != nil {
-		return p.defaultValue
-	}
-
-	// nothing found and no default value
-	return nil
-}
+// // Validate
+// // validates if all non-string properties have been provided by a suitable format
+// func Validate() []error {
+// 	var result []error
+// 	for name, property := range env.properties {
+// 		if property.required && GetProperty(name) == nil {
+// 			result = append(result, err.Error("Property "+name+" not provided!"))
+// 		}
+// 	}
+// 	if result != nil && !env.settings.IgnoreRequired {
+// 		panic(result)
+// 	}
+// 	return result
+// }
 
 // Get
 // Gets the value of a variable if it's provided. Returns nil if not.
