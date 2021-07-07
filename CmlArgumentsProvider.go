@@ -56,7 +56,7 @@ func newCmlArgumentsProvider() *cmlArgumentsProvider {
 
 // Get
 // Gets the value of the given property, if defined.
-func (cmlap *cmlArgumentsProvider) Get(name string) interface{} {
+func (cmlap *cmlArgumentsProvider) Get(name string, config interface{}) interface{} {
 	v, found := cmlap.switches[name]
 	if found {
 		return v

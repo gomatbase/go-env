@@ -46,7 +46,7 @@ func (evp *environmentVariablesProvider) Refresh() error {
 	return nil
 }
 
-func (evp *environmentVariablesProvider) Get(name string) interface{} {
+func (evp *environmentVariablesProvider) Get(name string, config interface{}) interface{} {
 	if v, found := os.LookupEnv(name); found {
 		return v
 	}

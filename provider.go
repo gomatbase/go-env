@@ -8,7 +8,7 @@ package env
 // be registered in the env package as a source of values
 type Provider interface {
 	// Get the value for the given property. nil should be returned if no property is found or an error with it exists
-	Get(name string) interface{}
+	Get(name string, config interface{}) interface{}
 
 	// Load Loads the values it should provide
 	Load() error

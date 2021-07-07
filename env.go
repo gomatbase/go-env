@@ -29,8 +29,10 @@ var env = &struct {
 			EnvironmentVariablesProvider(),
 		},
 		DefaultSources: []Source{
-			&cmlArgumentsSource{},
-			&environmentVariablesSource{},
+			CmlArgumentsSource(),
+			JsonConfigurationSource(),
+			YamlConfigurationSource(),
+			EnvironmentVariablesSource(),
 		},
 	},
 }
@@ -115,7 +117,7 @@ func GetProperty(name string) interface{} {
 	var value interface{}
 	for _, provider := range *providerChain {
 		for _, alias := range *aliases {
-			value = provider.Get(alias)
+			value = provider.Get(alias, nil)
 			if value != nil {
 				if convert != nil {
 					value = convert(value)
@@ -141,8 +143,8 @@ func Get(name string) interface{} {
 
 	if found {
 		v.mutex.Lock()
+		defer v.mutex.Unlock()
 		if v.value != nil {
-			defer v.mutex.Unlock()
 			return v.value
 		}
 	}
@@ -161,7 +163,7 @@ func Get(name string) interface{} {
 	// search the provider chain for the property
 	var value interface{}
 	for _, source := range *sources {
-		value = source.Provider().Get(name)
+		value = source.Provider().Get(name, source.Config())
 		if value != nil {
 			if convert != nil {
 				value = convert(value)
@@ -176,7 +178,6 @@ func Get(name string) interface{} {
 			value = v.defaultValue
 		}
 		v.value = value
-		v.mutex.Unlock()
 	}
 
 	// update variable value

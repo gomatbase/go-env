@@ -168,9 +168,15 @@ func TestConfigureVariables(t *testing.T) {
 		}
 	})
 
-	t.Run("Test configured json variable", func(t *testing.T) {
+	t.Run("Test configured json variables", func(t *testing.T) {
 		reset()
-		Var("property1").Default("default1").From(JsonConfigurationSource()).Add()
+		Var("property1").
+			Default("default1").
+			From(JsonConfigurationSource()).
+			Add()
+		Var("property2").
+			From(JsonConfigurationSource().Name("section.property2")).
+			Add()
 
 		os.Args = []string{"app", "-j", "tests/config.json"}
 		Load()
@@ -179,6 +185,28 @@ func TestConfigureVariables(t *testing.T) {
 			t.Error("property1 is not of the expected type")
 		} else if v != "jsonValue1" {
 			t.Error("value for property1 is not the expected one: ", v)
+		}
+
+		if v, isType := Get("property2").(string); !isType {
+			t.Error("property2 is not of the expected type")
+		} else if v != "sectionJsonValue2" {
+			t.Error("value for property2 is not the expected one: ", v)
+		}
+
+		if v, isType := Get("property3").(string); !isType {
+			t.Error("property3 is not of the expected type")
+		} else if v != "jsonValue3" {
+			t.Error("value for property3 is not the expected one: ", v)
+		}
+
+		if Get("property4") != nil {
+			t.Error("property4 was found!")
+		}
+
+		if v, isType := Get("section.property1").(string); !isType {
+			t.Error("section.property1 is not of the expected type")
+		} else if v != "sectionJsonValue1" {
+			t.Error("value for section.property1 is not the expected one: ", v)
 		}
 	})
 

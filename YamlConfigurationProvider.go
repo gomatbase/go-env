@@ -99,7 +99,7 @@ func YamlConfigurationSource() Source {
 // resolved as the source is not expected to change for a refresh.
 func (ycp *yamlConfigurationProvider) Load() error {
 	if ycp.options.FileFromCml {
-		if v := CmlArgumentsProvider().Get(ycp.options.CmlSwitch); v != nil {
+		if v := CmlArgumentsProvider().Get(ycp.options.CmlSwitch, nil); v != nil {
 			ycp.options.Filename = v.(string)
 		} else {
 			ycp.options.Filename = ""
@@ -126,10 +126,10 @@ func (ycp *yamlConfigurationProvider) Refresh() error {
 
 // Get
 // Gets the given property if available.
-func (ycp *yamlConfigurationProvider) Get(name string) interface{} {
+func (ycp *yamlConfigurationProvider) Get(name string, config interface{}) interface{} {
 	// first check if we allow cml override, and if we do, try to get it from there
 	if ycp.options.CmlPropertyOverride {
-		if v := CmlArgumentsProvider().Get(ycp.options.CmlPropertyOverrideSwitch + name); v != nil {
+		if v := CmlArgumentsProvider().Get(ycp.options.CmlPropertyOverrideSwitch+name, nil); v != nil {
 			return v
 		}
 	}

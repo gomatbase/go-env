@@ -19,6 +19,7 @@ type jsonConfigurationProvider struct {
 
 type jsonConfigurationSource struct {
 	provider *jsonConfigurationProvider
+	name     *string
 }
 
 func (jcs *jsonConfigurationSource) Provider() Provider {
@@ -26,6 +27,11 @@ func (jcs *jsonConfigurationSource) Provider() Provider {
 }
 
 func (jcs *jsonConfigurationSource) Config() interface{} {
+	return jcs
+}
+
+func (jcs *jsonConfigurationSource) Name(name string) *jsonConfigurationSource {
+	jcs.name = &name
 	return jcs
 }
 
@@ -81,7 +87,7 @@ func NewJsonConfigurationProviderWithOptions(options JsonConfigurationProviderOp
 	return jcp
 }
 
-func JsonConfigurationSource() Source {
+func JsonConfigurationSource() *jsonConfigurationSource {
 	return &jsonConfigurationSource{
 		provider: JsonConfigurationProvider(),
 	}
@@ -92,7 +98,7 @@ func JsonConfigurationSource() Source {
 // resolved as the source is not expected to change for a refresh.
 func (jcp *jsonConfigurationProvider) Load() error {
 	if jcp.options.FileFromCml {
-		if v := CmlArgumentsProvider().Get(jcp.options.CmlSwitch); v != nil {
+		if v := CmlArgumentsProvider().Get(jcp.options.CmlSwitch, nil); v != nil {
 			jcp.options.Filename = v.(string)
 		} else {
 			jcp.options.Filename = ""
@@ -119,15 +125,25 @@ func (jcp *jsonConfigurationProvider) Refresh() error {
 
 // Get
 // Gets the given property from the json file, if available.
-func (jcp *jsonConfigurationProvider) Get(name string) interface{} {
+func (jcp *jsonConfigurationProvider) Get(name string, config interface{}) interface{} {
+	variableName := name
+	// let's check if a configuration is passed and if it's the right type
+	if config != nil {
+		if source, isType := config.(*jsonConfigurationSource); isType {
+			if source.name != nil {
+				variableName = *source.name
+			}
+		}
+	}
+
 	// first check if we allow cml override, and if we do, try to get it from there
 	if jcp.options.CmlPropertyOverride {
-		if v := CmlArgumentsProvider().Get(jcp.options.CmlPropertyOverrideSwitch + name); v != nil {
+		if v := CmlArgumentsProvider().Get(jcp.options.CmlPropertyOverrideSwitch+variableName, nil); v != nil {
 			return v
 		}
 	}
 	// first split the parcels from the dot notation
-	parcels := strings.Split(name, ".")
+	parcels := strings.Split(variableName, ".")
 	var currentBlock *map[string]interface{}
 	var currentValue interface{} = jcp.json
 	for _, p := range parcels {
