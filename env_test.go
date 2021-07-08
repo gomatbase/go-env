@@ -5,8 +5,11 @@
 package env
 
 import (
+	"fmt"
 	"os"
 	"testing"
+
+	err "github.com/gomatbase/go-error"
 )
 
 var originalArguments = os.Args
@@ -16,6 +19,7 @@ func reset() {
 	env.variables = make(map[string]*variable)
 	os.Args = originalArguments
 	os.Clearenv()
+	cmlLoaded = false
 }
 
 func TestCmlArgumentsSource(t *testing.T) {
@@ -148,7 +152,7 @@ func TestJsonConfigurationSource(t *testing.T) {
 		Load()
 
 		if v, isType := Get("property1").(string); !isType {
-			t.Error("property1 is not of the expected type")
+			t.Error("property1 is not of the expected type", env)
 		} else if v != "jsonValue1" {
 			t.Error("value for property1 is not the expected one: ", v)
 		}
@@ -307,7 +311,6 @@ func TestYamlConfigurationSource(t *testing.T) {
 }
 
 func TestConfiguredVariables(t *testing.T) {
-
 	t.Run("Test unprovided variables with default values", func(t *testing.T) {
 		reset()
 		_ = Var("v1").Default("default1").Add()
@@ -352,6 +355,7 @@ func TestConfiguredVariables(t *testing.T) {
 		if v, isType := Get("property3").(string); !isType {
 			t.Error("property3 is not of the expected type")
 		} else if v != "jsonValue3" {
+			fmt.Println(jsonConfigurationProviderDefaultInstance.json)
 			t.Errorf("value for property3 is not the expected one: %v", v)
 		}
 		if v, isType := Get("property4").(string); !isType {
@@ -420,6 +424,106 @@ func TestConfiguredVariables(t *testing.T) {
 		if v := Get("property5"); v != nil {
 			t.Error("property5 was expected to be nil:", v)
 		}
+	})
+}
+
+func TestValidate(t *testing.T) {
+	t.Run("Test valid environment", func(t *testing.T) {
+		reset()
+		os.Args = []string{"app", "tests/config.json"}
+		_ = Var("property1").
+			Default("default1").
+			Required().
+			Add()
+		_ = Var("property2").
+			Default("default2").
+			Required().
+			Add()
+		_ = Var("property3").
+			Default("default3").
+			Required().
+			Add()
+		_ = Var("property4").
+			Add()
+		Load()
+
+		func() {
+			defer func() {
+				if r := recover(); r != nil {
+					t.Error("Validate should not have raised panic")
+				}
+			}()
+			if e := Validate(); e != nil {
+				t.Error("Validate should have succeeded")
+			}
+		}()
+
+	})
+
+	t.Run("Test missing variable", func(t *testing.T) {
+		reset()
+		os.Args = []string{"app", "tests/config.json"}
+		_ = Var("property1").
+			Default("default1").
+			Required().
+			Add()
+		_ = Var("property2").
+			Required().
+			Add()
+		_ = Var("property3").
+			Default("default3").
+			Required().
+			Add()
+		_ = Var("property4").
+			Required().
+			Add()
+		Load()
+
+		func() {
+			defer func() {
+				if r := recover(); r != nil {
+					t.Error("Validate should not have raised panic")
+				}
+			}()
+			if e := Validate(); e == nil {
+				t.Error("Validate should have failed")
+			} else if e.(err.Errors).Count() != 2 {
+				t.Error("Validate should have failed with 2 errors")
+			}
+		}()
+
+	})
+
+	t.Run("Test panic on failed validation", func(t *testing.T) {
+		reset()
+		FailOnMissingVariables(true)
+		os.Args = []string{"app", "tests/config.json"}
+		_ = Var("property1").
+			Default("default1").
+			Required().
+			Add()
+		_ = Var("property2").
+			Required().
+			Add()
+		_ = Var("property3").
+			Default("default3").
+			Required().
+			Add()
+		_ = Var("property4").
+			Required().
+			Add()
+		Load()
+
+		func() {
+			defer func() {
+				if r := recover(); r == nil {
+					t.Error("Validate should have raised panic")
+				}
+			}()
+			_ = Validate()
+			t.Error("Validate should have panicked")
+		}()
+
 	})
 
 	// t.Run("Test Fully configured property", func(t *testing.T) {

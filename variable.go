@@ -31,6 +31,11 @@ func (v *variable) From(source Source) *variable {
 	return v
 }
 
+func (v *variable) Required() *variable {
+	v.required = true
+	return v
+}
+
 func (v *variable) Add() error {
 	return addVar(v)
 }

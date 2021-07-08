@@ -116,8 +116,10 @@ func (jcp *jsonConfigurationProvider) Refresh() error {
 			log.Printf("Unable to read json file : \"%v\"", e)
 			jcp.json = make(map[string]interface{})
 			return e
-		} else if e = json.Unmarshal(b, &jcp.json); e != nil {
-			return e
+		} else {
+			if e = json.Unmarshal(b, &jcp.json); e != nil {
+				return e
+			}
 		}
 	}
 	return nil

@@ -39,8 +39,8 @@ var env = &struct {
 var lock = sync.Mutex{}
 
 type Settings struct {
-	IgnoreRequired bool
-	DefaultSources []Source
+	FailOnMissingRequired bool
+	DefaultSources        []Source
 }
 
 func addVar(v *variable) error {
@@ -69,20 +69,27 @@ func Load() []error {
 	return result
 }
 
-// // Validate
-// // validates if all non-string properties have been provided by a suitable format
-// func Validate() []error {
-// 	var result []error
-// 	for name, property := range env.properties {
-// 		if property.required && GetProperty(name) == nil {
-// 			result = append(result, err.Error("Property "+name+" not provided!"))
-// 		}
-// 	}
-// 	if result != nil && !env.settings.IgnoreRequired {
-// 		panic(result)
-// 	}
-// 	return result
-// }
+func FailOnMissingVariables(flag bool) {
+	env.settings.FailOnMissingRequired = flag
+}
+
+// Validate
+// validates if all non-string properties have been provided by a suitable format
+func Validate() error {
+	errors := err.NewErrors()
+	for name, variable := range env.variables {
+		if Get(name) == nil && variable.required {
+			errors.AddError(err.Error("Property " + name + " not provided!"))
+		}
+	}
+	if errors.Count() > 0 {
+		if env.settings.FailOnMissingRequired {
+			panic(errors)
+		}
+		return errors
+	}
+	return nil
+}
 
 // Get
 // Gets the value of a variable if it's provided. Returns nil if not.
