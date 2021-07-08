@@ -18,11 +18,9 @@ func reset() {
 	os.Clearenv()
 }
 
-// TestAdHocUsage tests out-of-the-box usage
-func TestAdHocUsage(t *testing.T) {
+func TestCmlArgumentsSource(t *testing.T) {
 	t.Run("Test ad-hoc cml extraction", func(t *testing.T) {
 		reset()
-		originalArgs := os.Args
 		os.Args = []string{"app", "-property1", "cmlValue1", "--property2", "longValue", "-property3=assignedValue"}
 		Load()
 		if v, isType := Get("property1").(string); !isType {
@@ -40,10 +38,54 @@ func TestAdHocUsage(t *testing.T) {
 		} else if v != "assignedValue" {
 			t.Error("value for property3 is not the expected one: ", v)
 		}
-		os.Args = originalArgs
 	})
 
-	t.Run("Test ad-hoc system environment variables extraction", func(t *testing.T) {
+	t.Run("Test configured cml variable", func(t *testing.T) {
+		reset()
+		_ = Var("v1").
+			Default("default1").
+			From(CmlArgumentsSource()).
+			Add()
+		_ = Var("v2").
+			Default("default2").
+			From(CmlArgumentsSource()).
+			Add()
+		_ = Var("v3").
+			From(CmlArgumentsSource()).
+			Add()
+		_ = Var("v4").
+			From(CmlArgumentsSource().Name("something")).
+			Add()
+
+		os.Args = []string{"app", "-Vv1", "cmlValue1", "-Vsomething", "cmlValue2"}
+		Load()
+
+		if v, isType := Get("v1").(string); !isType {
+			t.Error("v1 is not of the expected type")
+		} else if v != "cmlValue1" {
+			t.Error("value for v1 is not the expected one: ", v)
+		}
+
+		if v, isType := Get("v2").(string); !isType {
+			t.Error("v2 is not of the expected type")
+		} else if v != "default2" {
+			t.Error("value for v2 is not the expected one: ", v)
+		}
+
+		if Get("v3") != nil {
+			t.Error("v3 was found!")
+		}
+
+		if v, isType := Get("v4").(string); !isType {
+			t.Error("v4 is not of the expected type")
+		} else if v != "cmlValue2" {
+			t.Error("value for v4 is not the expected one: ", v)
+		}
+	})
+}
+
+func TestEnvironmentVariablesSource(t *testing.T) {
+	t.Run("Test ad-hoc environment variables extraction", func(t *testing.T) {
 		reset()
 		_ = os.Setenv("property1", "evValue1")
 		Load()
@@ -51,90 +93,6 @@ func TestAdHocUsage(t *testing.T) {
 			t.Error("property1 is not of the expected type")
 		} else if v != "evValue1" {
 			t.Error("value for property1 is not the expected one: ", v)
-		}
-		_ = os.Unsetenv("property1")
-	})
-
-	// Test json provided values
-	t.Run("Test ad-hoc json configuration with overrides", func(t *testing.T) {
-		reset()
-		originalArgs := os.Args
-		os.Args = []string{"app", "-Jsection.property2", "overrideSectionJsonValue2", "-j", "tests/config.json"}
-		Load()
-
-		if v, isType := Get("property1").(string); !isType {
-			t.Error("property1 is not of the expected type")
-		} else if v != "jsonValue1" {
-			t.Error("value for property1 is not the expected one: ", v)
-		}
-		if v, isType := Get("property3").(string); !isType {
-			t.Error("property3 is not of the expected type")
-		} else if v != "jsonValue3" {
-			t.Error("value for property3 is not the expected one: ", v)
-		}
-		if v, isType := Get("section.property1").(string); !isType {
-			t.Error("section.property1 is not of the expected type")
-		} else if v != "sectionJsonValue1" {
-			t.Error("value for section.property1 is not the expected one: ", v)
-		}
-		if v, isType := Get("section.property2").(string); !isType {
-			t.Error("section.property2 is not of the expected type")
-		} else if v != "overrideSectionJsonValue2" {
-			t.Error("value for section.property2 is not the expected one: ", v)
-		}
-
-		os.Args = originalArgs
-	})
-
-	// Test yml provided values
-	t.Run("Test ad-hoc yml configuration with overrides", func(t *testing.T) {
-		reset()
-		originalArgs := os.Args
-		os.Args = []string{"app", "-Ysection.property2", "overrideSectionYamlValue2", "-y", "tests/config.yml"}
-		Load()
-
-		if v, isType := Get("property1").(string); !isType {
-			t.Error("property1 is not of the expected type")
-		} else if v != "yamlValue1" {
-			t.Error("value for property1 is not the expected one: ", v)
-		}
-		if v, isType := Get("property3").(string); !isType {
-			t.Error("property3 is not of the expected type")
-		} else if v != "yamlValue3" {
-			t.Error("value for property3 is not the expected one: ", v)
-		}
-		if v, isType := Get("section.property1").(string); !isType {
-			t.Error("section.property1 is not of the expected type")
-		} else if v != "sectionYamlValue1" {
-			t.Error("value for section.property1 is not the expected one: ", v)
-		}
-		if v, isType := Get("section.property2").(string); !isType {
-			t.Error("section.property2 is not of the expected type")
-		} else if v != "overrideSectionYamlValue2" {
-			t.Error("value for section.property2 is not the expected one: ", v)
-		}
-
-		os.Args = originalArgs
-	})
-}
-
-func TestConfigureVariables(t *testing.T) {
-
-	t.Run("Test unprovided variables with default values", func(t *testing.T) {
-		reset()
-		_ = Var("v1").Default("default1").Add()
-		_ = Var("v2").Add()
-
-		if v, isType := Get("v1").(string); !isType {
-			t.Error("v1 is not of the expected type")
-		} else if v != "default1" {
-			t.Error("value for v1 is not the expected one: ", v)
-		}
-		if Get("v2") != nil {
-			t.Error("v2 was expected to be nil")
-		}
-		if Get("v3") != nil {
-			t.Error("v3 was expected to be nil")
 		}
 	})
 
@@ -181,47 +139,33 @@ func TestConfigureVariables(t *testing.T) {
 			t.Error("value for v4 is not the expected one: ", v)
 		}
 	})
+}
 
-	t.Run("Test configured cml variable", func(t *testing.T) {
+func TestJsonConfigurationSource(t *testing.T) {
+	t.Run("Test ad-hoc json configuration with overrides", func(t *testing.T) {
 		reset()
-		_ = Var("v1").
-			Default("default1").
-			From(CmlArgumentsSource()).
-			Add()
-		_ = Var("v2").
-			Default("default2").
-			From(CmlArgumentsSource()).
-			Add()
-		_ = Var("v3").
-			From(CmlArgumentsSource()).
-			Add()
-		_ = Var("v4").
-			From(CmlArgumentsSource().Name("something")).
-			Add()
-
-		os.Args = []string{"app", "-Vv1", "cmlValue1", "-Vsomething", "cmlValue2"}
+		os.Args = []string{"app", "-Jsection.property2", "overrideSectionJsonValue2", "-j", "tests/config.json"}
 		Load()
 
-		if v, isType := Get("v1").(string); !isType {
-			t.Error("v1 is not of the expected type")
-		} else if v != "cmlValue1" {
-			t.Error("value for v1 is not the expected one: ", v)
+		if v, isType := Get("property1").(string); !isType {
+			t.Error("property1 is not of the expected type")
+		} else if v != "jsonValue1" {
+			t.Error("value for property1 is not the expected one: ", v)
 		}
-
-		if v, isType := Get("v2").(string); !isType {
-			t.Error("v2 is not of the expected type")
-		} else if v != "default2" {
-			t.Error("value for v2 is not the expected one: ", v)
+		if v, isType := Get("property3").(string); !isType {
+			t.Error("property3 is not of the expected type")
+		} else if v != "jsonValue3" {
+			t.Error("value for property3 is not the expected one: ", v)
 		}
-
-		if Get("v3") != nil {
-			t.Error("v3 was found!")
+		if v, isType := Get("section.property1").(string); !isType {
+			t.Error("section.property1 is not of the expected type")
+		} else if v != "sectionJsonValue1" {
+			t.Error("value for section.property1 is not the expected one: ", v)
 		}
-
-		if v, isType := Get("v4").(string); !isType {
-			t.Error("v4 is not of the expected type")
-		} else if v != "cmlValue2" {
-			t.Error("value for v4 is not the expected one: ", v)
+		if v, isType := Get("section.property2").(string); !isType {
+			t.Error("section.property2 is not of the expected type")
+		} else if v != "overrideSectionJsonValue2" {
+			t.Error("value for section.property2 is not the expected one: ", v)
 		}
 	})
 
@@ -276,6 +220,38 @@ func TestConfigureVariables(t *testing.T) {
 			t.Error("value for section.property1 is not the expected one: ", v)
 		}
 	})
+}
+
+func TestYamlConfigurationSource(t *testing.T) {
+	t.Run("Test ad-hoc yml configuration with overrides", func(t *testing.T) {
+		reset()
+		originalArgs := os.Args
+		os.Args = []string{"app", "-Ysection.property2", "overrideSectionYamlValue2", "-y", "tests/config.yml"}
+		Load()
+
+		if v, isType := Get("property1").(string); !isType {
+			t.Error("property1 is not of the expected type")
+		} else if v != "yamlValue1" {
+			t.Error("value for property1 is not the expected one: ", v)
+		}
+		if v, isType := Get("property3").(string); !isType {
+			t.Error("property3 is not of the expected type")
+		} else if v != "yamlValue3" {
+			t.Error("value for property3 is not the expected one: ", v)
+		}
+		if v, isType := Get("section.property1").(string); !isType {
+			t.Error("section.property1 is not of the expected type")
+		} else if v != "sectionYamlValue1" {
+			t.Error("value for section.property1 is not the expected one: ", v)
+		}
+		if v, isType := Get("section.property2").(string); !isType {
+			t.Error("section.property2 is not of the expected type")
+		} else if v != "overrideSectionYamlValue2" {
+			t.Error("value for section.property2 is not the expected one: ", v)
+		}
+
+		os.Args = originalArgs
+	})
 
 	t.Run("Test configured yaml variable", func(t *testing.T) {
 		reset()
@@ -328,8 +304,28 @@ func TestConfigureVariables(t *testing.T) {
 			t.Error("value for section.property1 is not the expected one: ", v)
 		}
 	})
+}
 
-	// // Test chain of extraction
+func TestConfiguredVariables(t *testing.T) {
+
+	t.Run("Test unprovided variables with default values", func(t *testing.T) {
+		reset()
+		_ = Var("v1").Default("default1").Add()
+		_ = Var("v2").Add()
+
+		if v, isType := Get("v1").(string); !isType {
+			t.Error("v1 is not of the expected type")
+		} else if v != "default1" {
+			t.Error("value for v1 is not the expected one: ", v)
+		}
+		if Get("v2") != nil {
+			t.Error("v2 was expected to be nil")
+		}
+		if Get("v3") != nil {
+			t.Error("v3 was expected to be nil")
+		}
+	})
+
 	// t.Run("Test chain of extraction", func(t *testing.T) {
 	// 	reset()
 	// 	os.Args = []string{"app", "-property1", "cmlValue1", "-property2", "cmlValue2"}
