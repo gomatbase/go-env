@@ -7,6 +7,7 @@ package env
 import (
 	"os"
 	"strings"
+	"sync"
 )
 
 type cmlArgumentsProvider struct {
@@ -37,7 +38,11 @@ const (
 	cmlapVALUE
 )
 
-var cmlArgumentsProviderInstance = newCmlArgumentsProvider()
+var (
+	cmlArgumentsProviderInstance = newCmlArgumentsProvider()
+	cmlLock                      = sync.Mutex{}
+	cmlLoaded                    = false
+)
 
 // CmlArgumentsProvider
 // Gets the singleton instance for the CML Arguments Provider
@@ -62,6 +67,15 @@ func newCmlArgumentsProvider() *cmlArgumentsProvider {
 // Get
 // Gets the value of the given property, if defined.
 func (cmlap *cmlArgumentsProvider) Get(name string, config interface{}) interface{} {
+	if !cmlLoaded {
+		cmlLock.Lock()
+		if !cmlLoaded {
+			Load()
+			cmlLoaded = true
+		}
+		cmlLock.Unlock()
+	}
+
 	variableName := name
 	if source, isType := config.(*cmlArgumentsSource); isType {
 		if source.name != nil {
