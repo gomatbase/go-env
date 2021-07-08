@@ -369,6 +369,59 @@ func TestConfiguredVariables(t *testing.T) {
 		}
 	})
 
+	t.Run("Test custom chain of extraction", func(t *testing.T) {
+		reset()
+		os.Args = []string{"app", "-property1", "cmlValue1", "-property4", "cmlValue4", "-j", "tests/config.json", "-y", "tests/config.yml"}
+		_ = os.Setenv("property1", "envValue1")
+		_ = os.Setenv("property2", "envValue2")
+		_ = os.Setenv("property3", "envValue3")
+		_ = Var("property1").
+			Default("default1").
+			From(JsonConfigurationSource()).
+			From(YamlConfigurationSource()).
+			From(EnvironmentVariablesSource()).
+			From(CmlArgumentsSource()).
+			Add()
+		_ = Var("property2").
+			Default("default2").
+			From(JsonConfigurationSource()).
+			From(YamlConfigurationSource()).
+			From(EnvironmentVariablesSource()).
+			From(CmlArgumentsSource()).
+			Add()
+		_ = Var("property3").
+			Default("default3").
+			From(YamlConfigurationSource()).
+			From(JsonConfigurationSource()).
+			Add()
+		_ = Var("property4").
+			From(JsonConfigurationSource()).
+			Add()
+		Load()
+
+		if v, isType := Get("property1").(string); !isType {
+			t.Error("property1 is not of the expected type")
+		} else if v != "jsonValue1" {
+			t.Errorf("value for property1 is not the expected one: %v", v)
+		}
+		if v, isType := Get("property2").(string); !isType {
+			t.Error("property2 is not of the expected type")
+		} else if v != "envValue2" {
+			t.Errorf("value for property2 is not the expected one: %v", v)
+		}
+		if v, isType := Get("property3").(string); !isType {
+			t.Error("property3 is not of the expected type")
+		} else if v != "yamlValue3" {
+			t.Errorf("value for property3 is not the expected one: %v", v)
+		}
+		if Get("property4") != nil {
+			t.Error("property4 was found")
+		}
+		if v := Get("property5"); v != nil {
+			t.Error("property5 was expected to be nil:", v)
+		}
+	})
+
 	// t.Run("Test Fully configured property", func(t *testing.T) {
 	// 	reset()
 	// 	AddProperty("property1").
