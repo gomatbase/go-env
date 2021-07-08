@@ -288,8 +288,8 @@ func TestYamlConfigurationSource(t *testing.T) {
 			t.Error("value for property3 is not the expected one: ", v)
 		}
 
-		if Get("property4") != nil {
-			t.Error("property4 was found!")
+		if Get("property6") != nil {
+			t.Error("property5 was found!")
 		}
 
 		if v, isType := Get("property5").(string); !isType {
@@ -326,42 +326,49 @@ func TestConfiguredVariables(t *testing.T) {
 		}
 	})
 
-	// t.Run("Test chain of extraction", func(t *testing.T) {
-	// 	reset()
-	// 	os.Args = []string{"app", "-property1", "cmlValue1", "-property2", "cmlValue2"}
-	// 	_ = os.Setenv("property1", "evValue1")
-	// 	_ = os.Setenv("property3", "evValue3")
-	// 	AddProperty("property1").WithDefaultValue("default1")
-	// 	AddProperty("property2").WithDefaultValue("default2")
-	// 	AddProperty("property3").WithDefaultValue("default3")
-	// 	AddProperty("property4").WithDefaultValue("default4")
-	// 	Load()
-	//
-	// 	if v, isType := GetProperty("property1").(string); !isType {
-	// 		t.Error("property1 is not of the expected type")
-	// 	} else if v != "cmlValue1" {
-	// 		t.Errorf("value for property1 is not the expected one: %v", v)
-	// 	}
-	// 	if v, isType := GetProperty("property2").(string); !isType {
-	// 		t.Error("property1 is not of the expected type")
-	// 	} else if v != "cmlValue2" {
-	// 		t.Errorf("value for property2 is not the expected one: %v", v)
-	// 	}
-	// 	if v, isType := GetProperty("property3").(string); !isType {
-	// 		t.Error("property3 is not of the expected type")
-	// 	} else if v != "evValue3" {
-	// 		t.Errorf("value for property3 is not the expected one: %v", v)
-	// 	}
-	// 	if v, isType := GetProperty("property4").(string); !isType {
-	// 		t.Error("property4 is not of the expected type")
-	// 	} else if v != "default4" {
-	// 		t.Errorf("value for property4 is not the expected one: %v", v)
-	// 	}
-	// 	if GetProperty("property5") != nil {
-	// 		t.Error("property5 was expected to be nil")
-	// 	}
-	// })
-	//
+	t.Run("Test default chain of extraction", func(t *testing.T) {
+		reset()
+		os.Args = []string{"app", "-property1", "cmlValue1", "-j", "tests/config.json", "-y", "tests/config.yml"}
+		_ = os.Setenv("property1", "envValue1")
+		_ = os.Setenv("property3", "envValue3")
+		_ = os.Setenv("property5", "envValue5")
+		_ = Var("property1").Default("default1").Add()
+		_ = Var("property2").Default("default2").Add()
+		_ = Var("property3").Default("default3").Add()
+		_ = Var("property4").Default("default4").Add()
+		_ = Var("property5").Default("default5").Add()
+		Load()
+
+		if v, isType := Get("property1").(string); !isType {
+			t.Error("property1 is not of the expected type")
+		} else if v != "cmlValue1" {
+			t.Errorf("value for property1 is not the expected one: %v", v)
+		}
+		if v, isType := Get("property2").(string); !isType {
+			t.Error("property2 is not of the expected type")
+		} else if v != "default2" {
+			t.Errorf("value for property2 is not the expected one: %v", v)
+		}
+		if v, isType := Get("property3").(string); !isType {
+			t.Error("property3 is not of the expected type")
+		} else if v != "jsonValue3" {
+			t.Errorf("value for property3 is not the expected one: %v", v)
+		}
+		if v, isType := Get("property4").(string); !isType {
+			t.Error("property4 is not of the expected type")
+		} else if v != "yamlValue4" {
+			t.Errorf("value for property4 is not the expected one: %v", v)
+		}
+		if v, isType := Get("property5").(string); !isType {
+			t.Error("property5 is not of the expected type")
+		} else if v != "envValue5" {
+			t.Errorf("value for property5 is not the expected one: %v", v)
+		}
+		if Get("property6") != nil {
+			t.Error("property6 was expected to be nil")
+		}
+	})
+
 	// t.Run("Test Fully configured property", func(t *testing.T) {
 	// 	reset()
 	// 	AddProperty("property1").

@@ -1,5 +1,6 @@
 property1: yamlValue1
 property3: yamlValue3
+property4: yamlValue4
 section:
   property1: sectionYamlValue1
   property2: sectionYamlValue2
