@@ -70,7 +70,7 @@ func (cmlap *cmlArgumentsProvider) Get(name string, config interface{}) interfac
 	if !cmlLoaded {
 		cmlLock.Lock()
 		if !cmlLoaded {
-			Load()
+			_ = cmlap.Load()
 			cmlLoaded = true
 		}
 		cmlLock.Unlock()
