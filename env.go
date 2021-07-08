@@ -16,16 +16,17 @@ const (
 
 var env = &struct {
 	variables map[string]*variable
+	providers map[Provider]bool
 	settings  Settings
 }{
 	variables: make(map[string]*variable),
+	providers: map[Provider]bool{
+		CmlArgumentsProvider():         true,
+		JsonConfigurationProvider():    true,
+		YamlConfigurationProvider():    true,
+		EnvironmentVariablesProvider(): true,
+	},
 	settings: Settings{
-		DefaultProviderChain: []Provider{
-			CmlArgumentsProvider(),
-			JsonConfigurationProvider(),
-			YamlConfigurationProvider(),
-			EnvironmentVariablesProvider(),
-		},
 		DefaultSources: []Source{
 			CmlArgumentsSource(),
 			JsonConfigurationSource(),
@@ -38,9 +39,8 @@ var env = &struct {
 var lock = sync.Mutex{}
 
 type Settings struct {
-	IgnoreRequired       bool
-	DefaultProviderChain []Provider
-	DefaultSources       []Source
+	IgnoreRequired bool
+	DefaultSources []Source
 }
 
 func addVar(v *variable) error {
@@ -60,7 +60,7 @@ func addVar(v *variable) error {
 // initializes environment with provided configuration
 func Load() []error {
 	var result []error
-	for _, provider := range env.settings.DefaultProviderChain {
+	for provider := range env.providers {
 		if e := provider.Load(); e != nil {
 			result = append(result, e)
 		}
@@ -137,15 +137,11 @@ func Get(name string) interface{} {
 // refresh, but should have an error-free implementation then.
 func Refresh() []error {
 	var result []error
-	for _, provider := range env.settings.DefaultProviderChain {
+	for provider := range env.providers {
 		if e := provider.Refresh(); e != nil {
 			result = append(result, e)
 		}
 	}
 
 	return nil
-}
-
-func SetDefaultChain(provider ...Provider) {
-	env.settings.DefaultProviderChain = provider
 }
