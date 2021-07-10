@@ -6,6 +6,7 @@ package env
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"testing"
 
@@ -20,6 +21,24 @@ func reset() {
 	os.Args = originalArguments
 	os.Clearenv()
 	cmlLoaded = false
+	copy("tests/config.original.json", "tests/config.json")
+	copy("tests/config.original.yml", "tests/config.yml")
+}
+
+func copy(src, dst string) {
+	srcFile, _ := os.Open(src)
+	defer srcFile.Close()
+	dstFile, _ := os.OpenFile(dst, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
+	defer dstFile.Close()
+	io.Copy(dstFile, srcFile)
+}
+
+func updateJson() {
+	copy("tests/config.updated.json", "tests/config.json")
+}
+
+func updateYaml() {
+	copy("tests/config.updated.yml", "tests/config.yml")
 }
 
 func TestCmlArgumentsSource(t *testing.T) {
@@ -525,43 +544,84 @@ func TestValidate(t *testing.T) {
 		}()
 
 	})
+}
 
-	// t.Run("Test Fully configured property", func(t *testing.T) {
-	// 	reset()
-	// 	AddProperty("property1").
-	// 		Required().
-	// 		From(JsonConfigurationProvider()).
-	// 		From(EnvironmentVariablesProvider())
-	//
-	// 	Load()
-	// 	func() {
-	// 		defer func() {
-	// 			if r := recover(); r == nil {
-	// 				t.Error("Validate did not trigger panic")
-	// 			}
-	// 			log.Print("RECOVERED")
-	// 		}()
-	// 		Validate()
-	// 	}()
-	//
-	// 	_ = os.Setenv("property1", "envValue1")
-	// 	Load()
-	// 	Validate()
-	//
-	// 	if v, isType := GetProperty("property1").(string); !isType {
-	// 		t.Error("property1 is not of the expected type")
-	// 	} else if v != "envValue1" {
-	// 		t.Errorf("value for property1 is not the expected one: %v", v)
-	// 	}
-	//
-	// 	os.Args = []string{"app", "-property1", "cmlValue1", "-j", "tests/config.json"}
-	// 	Load()
-	// 	Validate()
-	//
-	// 	if v, isType := GetProperty("property1").(string); !isType {
-	// 		t.Error("property1 is not of the expected type")
-	// 	} else if v != "jsonValue1" {
-	// 		t.Errorf("value for property1 is not the expected one: %v", v)
-	// 	}
-	// })
+func TestRefresh(t *testing.T) {
+	t.Run("Test refresh with ad-hoc variables", func(t *testing.T) {
+		reset()
+
+		os.Args = []string{"app", "-property1", "cmlValue1", "-j", "tests/config.json", "-y", "tests/config.yml"}
+		_ = os.Setenv("property1", "envValue1")
+		_ = os.Setenv("property3", "envValue3")
+		_ = os.Setenv("property5", "envValue5")
+		Load()
+
+		if v, isType := Get("property1").(string); !isType {
+			t.Error("property1 is not of the expected type")
+		} else if v != "cmlValue1" {
+			t.Errorf("value for property1 is not the expected one: %v", v)
+		}
+		if Get("property2") != nil {
+			t.Error("property2 was expected to be nil")
+		}
+		if v, isType := Get("property3").(string); !isType {
+			t.Error("property3 is not of the expected type")
+		} else if v != "jsonValue3" {
+			t.Errorf("value for property3 is not the expected one: %v", v)
+		}
+		if v, isType := Get("property4").(string); !isType {
+			t.Error("property4 is not of the expected type")
+		} else if v != "yamlValue4" {
+			t.Errorf("value for property4 is not the expected one: %v", v)
+		}
+		if v, isType := Get("property5").(string); !isType {
+			t.Error("property5 is not of the expected type")
+		} else if v != "envValue5" {
+			t.Errorf("value for property5 is not the expected one: %v", v)
+		}
+
+		updateJson()
+		updateYaml()
+		os.Args = originalArguments
+		_ = os.Setenv("property5", "envNewValue5")
+		Refresh()
+
+		// ad-hoc variables will only get refreshed if the first value in the default chain is refreshed. CML doesn't
+		// refresh as that doesn't happen in a real-life scenario. Environment variables also don't change in real life
+		// scenarios but the provider always takes the value directly from the os environment variable.
+
+		if v, isType := Get("property1").(string); !isType {
+			t.Error("property1 is not of the expected type")
+		} else if v != "cmlValue1" {
+			t.Errorf("value for property1 is not the expected one: %v", v)
+		}
+		if v, isType := Get("property2").(string); !isType {
+			t.Error("property2 is not of the expected type")
+		} else if v != "jsonValue2" {
+			t.Errorf("value for property2 is not the expected one: %v", v)
+		}
+		if v, isType := Get("property3").(string); !isType {
+			t.Error("property3 is not of the expected type")
+		} else if v != "jsonValue3" {
+			t.Errorf("value for property3 is not the expected one: %v", v)
+		}
+		if v, isType := Get("property4").(string); !isType {
+			t.Error("property4 is not of the expected type")
+		} else if v != "yamlNewValue4" {
+			t.Errorf("value for property4 is not the expected one: %v", v)
+		}
+		if v, isType := Get("property5").(string); !isType {
+			t.Error("property5 is not of the expected type")
+		} else if v != "envNewValue5" {
+			t.Errorf("value for property5 is not the expected one: %v", v)
+		}
+	})
+
+	t.Run("Test refresh with configured variables", func(t *testing.T) {
+		reset()
+	})
+
+	t.Run("Test refresh with configured variable listeners", func(t *testing.T) {
+		reset()
+	})
 }

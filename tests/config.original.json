@@ -1,0 +1,8 @@
+{
+  "property1": "jsonValue1",
+  "property3": "jsonValue3",
+  "section": {
+    "property1": "sectionJsonValue1",
+    "property2": "sectionJsonValue2"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "property1": "jsonNewValue1",
+  "property2": "jsonValue2",
+  "property3": "jsonValue3",
+  "section": {
+    "property1": "sectionJsonValue1",
+    "property2": "sectionJsonValue2"
+  }
+}
