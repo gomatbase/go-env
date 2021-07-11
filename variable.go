@@ -6,11 +6,15 @@ package env
 
 import "sync"
 
+type valuePlaceholder struct {
+	value interface{}
+}
+
 type variable struct {
 	name         string
 	required     bool
 	defaultValue interface{}
-	value        interface{}
+	cachedValue  *valuePlaceholder
 	sources      []Source
 	chain        []Provider
 	converter    func(value interface{}) interface{}

@@ -99,8 +99,8 @@ func Get(name string) interface{} {
 	if found {
 		v.mutex.Lock()
 		defer v.mutex.Unlock()
-		if v.value != nil {
-			return v.value
+		if v.cachedValue != nil {
+			return v.cachedValue.value
 		}
 	}
 
@@ -132,7 +132,7 @@ func Get(name string) interface{} {
 		if value == nil {
 			value = v.defaultValue
 		}
-		v.value = value
+		v.cachedValue = &valuePlaceholder{value: value}
 	}
 
 	// update variable value
