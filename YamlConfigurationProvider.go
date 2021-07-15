@@ -7,15 +7,19 @@ package env
 import (
 	"io/ioutil"
 	"log"
+	"os"
 	"strings"
 	"sync"
+	"time"
 
 	"gopkg.in/yaml.v2"
 )
 
 type yamlConfigurationProvider struct {
-	options YamlConfigurationProviderOptions
-	yaml    map[interface{}]interface{}
+	options   YamlConfigurationProviderOptions
+	timestamp time.Time
+	lock      sync.Mutex
+	yaml      *map[interface{}]interface{}
 }
 
 type yamlConfigurationSource struct {
@@ -85,12 +89,12 @@ func NewYamlConfigurationProvider() *yamlConfigurationProvider {
 }
 
 // NewYamlConfigurationProviderWithOptions
-// Creates a new JSON configuration Provider with given options
+// Creates a new Yaml configuration Provider with given options
 func NewYamlConfigurationProviderWithOptions(options YamlConfigurationProviderOptions) *yamlConfigurationProvider {
 	ycp := &yamlConfigurationProvider{
 		options: options,
 	}
-	_ = ycp.Refresh()
+	_ = ycp.Load()
 	return ycp
 }
 
@@ -110,29 +114,42 @@ func (ycp *yamlConfigurationProvider) Load() error {
 		} else {
 			ycp.options.Filename = ""
 		}
-		ycp.yaml = make(map[interface{}]interface{})
 	}
-	return ycp.Refresh()
+	_, e := ycp.Refresh()
+	return e
 }
 
 // Refresh
 // Reloads the configuration file. If no yaml file is configured, it is a nil operation.
-func (ycp *yamlConfigurationProvider) Refresh() error {
+func (ycp *yamlConfigurationProvider) Refresh() (bool, error) {
 	if ycp.options.Filename != "" {
+		stat, e := os.Stat(ycp.options.Filename)
+		if e != nil {
+			return false, e
+		}
+		ycp.lock.Lock()
+		defer ycp.lock.Unlock()
+		if !stat.ModTime().After(ycp.timestamp) {
+			return false, nil
+		}
 		if b, e := ioutil.ReadFile(ycp.options.Filename); e != nil {
 			log.Printf("Unable to read yaml file : \"%v\"", e)
-			ycp.yaml = make(map[interface{}]interface{})
-			return e
+			return false, e
 		} else if e = yaml.Unmarshal(b, &ycp.yaml); e != nil {
-			return e
+			return false, e
 		}
 	}
-	return nil
+	return false, nil
 }
 
 // Get
 // Gets the given property if available.
 func (ycp *yamlConfigurationProvider) Get(name string, config interface{}) interface{} {
+	// If no yaml has been loaded, let's just return nil
+	if ycp.yaml == nil {
+		return nil
+	}
+
 	variableName := name
 	// let's check if a configuration is passed and if it's the right type
 	if config != nil {
@@ -152,7 +169,7 @@ func (ycp *yamlConfigurationProvider) Get(name string, config interface{}) inter
 	// first split the parcels from the dot notation
 	parcels := strings.Split(variableName, ".")
 	var currentBlock *map[interface{}]interface{}
-	var currentValue interface{} = ycp.yaml
+	var currentValue interface{} = *ycp.yaml
 	for _, p := range parcels {
 		if b, isType := currentValue.(map[interface{}]interface{}); !isType {
 			return nil

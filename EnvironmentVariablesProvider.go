@@ -47,8 +47,8 @@ func (evp *environmentVariablesProvider) Load() error {
 
 // Refresh
 // Refreshes the environment variables. This is a nil operation as the environment variables are always taken directly from os calls
-func (evp *environmentVariablesProvider) Refresh() error {
-	return nil
+func (evp *environmentVariablesProvider) Refresh() (bool, error) {
+	return false, nil
 }
 
 func (evp *environmentVariablesProvider) Get(name string, config interface{}) interface{} {

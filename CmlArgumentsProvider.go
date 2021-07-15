@@ -39,7 +39,7 @@ const (
 )
 
 var (
-	cmlArgumentsProviderInstance = newCmlArgumentsProvider()
+	cmlArgumentsProviderInstance = &cmlArgumentsProvider{}
 	cmlLock                      = sync.Mutex{}
 	cmlLoaded                    = false
 )
@@ -52,16 +52,6 @@ func CmlArgumentsProvider() *cmlArgumentsProvider {
 
 func CmlArgumentsSource() *cmlArgumentsSource {
 	return &cmlArgumentsSource{}
-}
-
-// newCmlArgumentsProvider
-// Creates a new CML Arguments Provider (doesn't affect default instance)
-func newCmlArgumentsProvider() *cmlArgumentsProvider {
-	cmlap := &cmlArgumentsProvider{}
-	if e := cmlap.Refresh(); e != nil {
-		panic(e)
-	} // errors should never happen
-	return cmlap
 }
 
 // Get
@@ -140,6 +130,6 @@ func (cmlap *cmlArgumentsProvider) Load() error {
 
 // Refresh
 // cml is fixed from start of application, no refresh is possible but we implement it anyway for testing purposes
-func (cmlap *cmlArgumentsProvider) Refresh() error {
-	return nil
+func (cmlap *cmlArgumentsProvider) Refresh() (bool, error) {
+	return false, nil
 }

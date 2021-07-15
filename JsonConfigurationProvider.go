@@ -8,13 +8,17 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
+	"os"
 	"strings"
 	"sync"
+	"time"
 )
 
 type jsonConfigurationProvider struct {
-	options JsonConfigurationProviderOptions
-	json    map[string]interface{}
+	options   JsonConfigurationProviderOptions
+	timestamp time.Time
+	lock      sync.Mutex
+	json      *map[string]interface{}
 }
 
 type jsonConfigurationSource struct {
@@ -103,31 +107,47 @@ func (jcp *jsonConfigurationProvider) Load() error {
 		} else {
 			jcp.options.Filename = ""
 		}
-		jcp.json = make(map[string]interface{})
 	}
-	return jcp.Refresh()
+	_, e := jcp.Refresh()
+	return e
 }
 
 // Refresh
 // Reloads the configuration file. If no json file is configured, it is a nil operation.
-func (jcp *jsonConfigurationProvider) Refresh() error {
+func (jcp *jsonConfigurationProvider) Refresh() (bool, error) {
 	if jcp.options.Filename != "" {
+		stat, e := os.Stat(jcp.options.Filename)
+		if e != nil {
+			return false, e
+		}
+		jcp.lock.Lock()
+		defer jcp.lock.Unlock()
+		if !stat.ModTime().After(jcp.timestamp) {
+			return false, nil
+		}
 		if b, e := ioutil.ReadFile(jcp.options.Filename); e != nil {
 			log.Printf("Unable to read json file : \"%v\"", e)
-			jcp.json = make(map[string]interface{})
-			return e
+			return false, e
 		} else {
-			if e = json.Unmarshal(b, &jcp.json); e != nil {
-				return e
+			jsonObject := make(map[string]interface{})
+			if e = json.Unmarshal(b, &jsonObject); e != nil {
+				return false, e
 			}
+			jcp.json = &jsonObject
+			return true, nil
 		}
 	}
-	return nil
+	return false, nil
 }
 
 // Get
 // Gets the given property from the json file, if available.
 func (jcp *jsonConfigurationProvider) Get(name string, config interface{}) interface{} {
+	// If no json has been loaded, let's just return nil
+	if jcp.json == nil {
+		return nil
+	}
+
 	variableName := name
 	// let's check if a configuration is passed and if it's the right type
 	if config != nil {
@@ -147,7 +167,7 @@ func (jcp *jsonConfigurationProvider) Get(name string, config interface{}) inter
 	// first split the parcels from the dot notation
 	parcels := strings.Split(variableName, ".")
 	var currentBlock *map[string]interface{}
-	var currentValue interface{} = jcp.json
+	var currentValue interface{} = *jcp.json
 	for _, p := range parcels {
 		if b, isType := currentValue.(map[string]interface{}); !isType {
 			return nil

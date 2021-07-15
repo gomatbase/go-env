@@ -14,7 +14,9 @@ type Provider interface {
 	Load() error
 
 	// Refresh the provider sources. Useful for sources which are mutable during a single execution (like file sources)
-	Refresh() error
+	// returns a boolean stating if it has newer values and an error for failures. A provider not able to refresh should
+	// always return false with no errors.
+	Refresh() (bool, error)
 }
 
 // Source of a variable identifies the provider where the value will come from and the variable configuration to extract

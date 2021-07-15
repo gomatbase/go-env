@@ -145,7 +145,7 @@ func Get(name string) interface{} {
 func Refresh() []error {
 	var result []error
 	for provider := range env.providers {
-		if e := provider.Refresh(); e != nil {
+		if _, e := provider.Refresh(); e != nil {
 			result = append(result, e)
 		}
 	}
