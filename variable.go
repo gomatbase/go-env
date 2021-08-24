@@ -15,14 +15,19 @@ type variable struct {
 	required     bool
 	defaultValue interface{}
 	cachedValue  *valuePlaceholder
-	sources      []Source
+	sources      []*source
 	chain        []Provider
 	converter    func(value interface{}) interface{}
 	mutex        sync.Mutex
 }
 
+type source struct {
+	source      Source
+	cachedValue *valuePlaceholder
+}
+
 func Var(name string) *variable {
-	return &variable{name: name, sources: make([]Source, 0)}
+	return &variable{name: name, sources: make([]*source, 0)}
 }
 
 func (v *variable) Default(defaultValue interface{}) *variable {
@@ -30,7 +35,10 @@ func (v *variable) Default(defaultValue interface{}) *variable {
 	return v
 }
 
-func (v *variable) From(source Source) *variable {
+func (v *variable) From(s Source) *variable {
+	source := &source{
+		source: s,
+	}
 	v.sources = append(v.sources, source)
 	return v
 }

@@ -7,6 +7,7 @@ package env
 import (
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"testing"
 
@@ -21,26 +22,34 @@ func reset() {
 	os.Args = originalArguments
 	os.Clearenv()
 	cmlLoaded = false
-	copy("tests/config.original.json", "tests/config.json")
-	copy("tests/config.original.yml", "tests/config.yml")
+	copyFile("tests/config.original.json", "tests/config.json")
+	copyFile("tests/config.original.yml", "tests/config.yml")
 	jsonConfigurationProviderDefaultInstance.json = nil
 	yamlConfigurationProviderDefaultInstance.yaml = nil
 }
 
-func copy(src, dst string) {
+func deferredFileClose(file *os.File) {
+	if e := file.Close(); e != nil {
+		log.Println("Failed to close file:", e)
+	}
+}
+
+func copyFile(src, dst string) {
 	srcFile, _ := os.Open(src)
-	defer srcFile.Close()
+	defer deferredFileClose(srcFile)
 	dstFile, _ := os.OpenFile(dst, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
-	defer dstFile.Close()
-	io.Copy(dstFile, srcFile)
+	defer deferredFileClose(dstFile)
+	if _, e := io.Copy(dstFile, srcFile); e != nil {
+		log.Printf("Faile to copy %s to %s: %s", srcFile.Name(), dstFile.Name(), e)
+	}
 }
 
 func updateJson() {
-	copy("tests/config.updated.json", "tests/config.json")
+	copyFile("tests/config.updated.json", "tests/config.json")
 }
 
 func updateYaml() {
-	copy("tests/config.updated.yml", "tests/config.yml")
+	copyFile("tests/config.updated.yml", "tests/config.yml")
 }
 
 func TestCmlArgumentsSource(t *testing.T) {
@@ -586,7 +595,9 @@ func TestRefresh(t *testing.T) {
 		updateYaml()
 		os.Args = originalArguments
 		_ = os.Setenv("property5", "envNewValue5")
-		Refresh()
+		if e := Refresh(); e != nil {
+			t.Error("Unexpected refresh errors :\n", e.Error())
+		}
 
 		// ad-hoc variables will only get refreshed if the first value in the default chain is refreshed. CML doesn't
 		// refresh as that doesn't happen in a real-life scenario. Environment variables also don't change in real life
@@ -627,7 +638,6 @@ func TestRefresh(t *testing.T) {
 			Required().
 			Add()
 		_ = Var("property2").
-			Required().
 			Add()
 		_ = Var("property3").
 			Default("default3").
@@ -676,11 +686,13 @@ func TestRefresh(t *testing.T) {
 		updateYaml()
 		os.Args = originalArguments
 		_ = os.Setenv("property5", "envNewValue5")
-		Refresh()
+		if e := Refresh(); e != nil {
+			t.Error("Unexpected refresh errors :\n", e.Error())
+		}
 
 		if v, isType := Get("property1").(string); !isType {
 			t.Error("property1 is not of the expected type")
-		} else if v != "cmlValue1" {
+		} else if v != "jsonNewValue1" {
 			t.Errorf("value for property1 is not the expected one: %v", v)
 		}
 		if v, isType := Get("property2").(string); !isType {
