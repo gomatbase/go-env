@@ -508,7 +508,7 @@ func TestValidate(t *testing.T) {
 			}()
 			if e := Validate(); e == nil {
 				t.Error("Validate should have failed")
-			} else if e.(err.Errors).Count() != 2 {
+			} else if err.Count(e) != 2 {
 				t.Error("Validate should have failed with 2 errors")
 			}
 		}()

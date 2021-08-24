@@ -76,7 +76,7 @@ func FailOnMissingVariables(flag bool) {
 // Validate
 // validates if all non-string properties have been provided by a suitable format
 func Validate() error {
-	errors := err.NewErrors()
+	errors := err.Errors()
 	for name, variable := range env.variables {
 		if Get(name) == nil && variable.required {
 			errors.AddError(err.Error("Property " + name + " not provided!"))
