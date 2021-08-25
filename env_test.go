@@ -599,10 +599,6 @@ func TestRefresh(t *testing.T) {
 			t.Error("Unexpected refresh errors :\n", e.Error())
 		}
 
-		// ad-hoc variables will only get refreshed if the first value in the default chain is refreshed. CML doesn't
-		// refresh as that doesn't happen in a real-life scenario. Environment variables also don't change in real life
-		// scenarios but the provider always takes the value directly from the os environment variable.
-
 		if v, isType := Get("property1").(string); !isType {
 			t.Error("property1 is not of the expected type")
 		} else if v != "cmlValue1" {
@@ -623,6 +619,10 @@ func TestRefresh(t *testing.T) {
 		} else if v != "yamlNewValue4" {
 			t.Errorf("value for property4 is not the expected one: %v", v)
 		}
+
+		// ad-hoc variables will only get refreshed if the first value in the default chain is refreshed. CML doesn't
+		// refresh as that doesn't happen in a real-life scenario. Environment variables also don't change in real life
+		// scenarios but the provider always takes the value directly from the os environment variable.
 		if v, isType := Get("property5").(string); !isType {
 			t.Error("property5 is not of the expected type")
 		} else if v != "envNewValue5" {
@@ -702,7 +702,7 @@ func TestRefresh(t *testing.T) {
 		}
 		if v, isType := Get("property3").(string); !isType {
 			t.Error("property3 is not of the expected type")
-		} else if v != "jsonValue3" {
+		} else if v != "yamlNewValue3" {
 			t.Errorf("value for property3 is not the expected one: %v", v)
 		}
 		if v, isType := Get("property4").(string); !isType {
@@ -710,9 +710,11 @@ func TestRefresh(t *testing.T) {
 		} else if v != "yamlNewValue4" {
 			t.Errorf("value for property4 is not the expected one: %v", v)
 		}
+		// For defined variables, values are cached to do comparison. The environment variable provider should never
+		// report being dirty and the value for the property should not change.
 		if v, isType := Get("property5").(string); !isType {
 			t.Error("property5 is not of the expected type")
-		} else if v != "envNewValue5" {
+		} else if v != "envValue5" {
 			t.Errorf("value for property5 is not the expected one: %v", v)
 		}
 	})

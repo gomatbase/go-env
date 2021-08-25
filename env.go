@@ -193,7 +193,7 @@ func Refresh() error {
 
 	for _, v := range env.variables {
 		v.mutex.Lock()
-		if v.cachedValue != nil {
+		if v.cachedValue == nil {
 			// it was never retrieved, let's initialize the cached value prioritizing the first dirty provider
 			v.cachedValue = &valuePlaceholder{}
 			var dirtyValue interface{}

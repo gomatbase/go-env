@@ -135,8 +135,13 @@ func (ycp *yamlConfigurationProvider) Refresh() (bool, error) {
 		if b, e := ioutil.ReadFile(ycp.options.Filename); e != nil {
 			log.Printf("Unable to read yaml file : \"%v\"", e)
 			return false, e
-		} else if e = yaml.Unmarshal(b, &ycp.yaml); e != nil {
-			return false, e
+		} else {
+			yamlObject := make(map[interface{}]interface{})
+			if e = yaml.Unmarshal(b, &yamlObject); e != nil {
+				return false, e
+			}
+			ycp.yaml = &yamlObject
+			return true, nil
 		}
 	}
 	return false, nil
