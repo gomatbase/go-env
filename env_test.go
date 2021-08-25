@@ -595,7 +595,7 @@ func TestRefresh(t *testing.T) {
 		updateYaml()
 		os.Args = originalArguments
 		_ = os.Setenv("property5", "envNewValue5")
-		if e := Refresh(); e != nil {
+		if e := SyncedRefresh(); e != nil {
 			t.Error("Unexpected refresh errors :\n", e.Error())
 		}
 
@@ -686,7 +686,7 @@ func TestRefresh(t *testing.T) {
 		updateYaml()
 		os.Args = originalArguments
 		_ = os.Setenv("property5", "envNewValue5")
-		if e := Refresh(); e != nil {
+		if e := SyncedRefresh(); e != nil {
 			t.Error("Unexpected refresh errors :\n", e.Error())
 		}
 
@@ -810,7 +810,7 @@ func TestRefresh(t *testing.T) {
 		updateYaml()
 		os.Args = originalArguments
 		_ = os.Setenv("property5", "envNewValue5")
-		if e := Refresh(); e != nil {
+		if e := SyncedRefresh(); e != nil {
 			t.Error("Unexpected refresh errors :\n", e.Error())
 		}
 

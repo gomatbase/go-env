@@ -5,6 +5,7 @@
 package env
 
 import (
+	"log"
 	"sync"
 
 	"github.com/gomatbase/go-error"
@@ -175,9 +176,19 @@ func Get(name string) interface{} {
 }
 
 // Refresh
-// Refreshes Provider configurations. A provider does not need to guarantee a
+// Refreshes asynchronously. Refresh errors are logged
+func Refresh() {
+	go func() {
+		if e := SyncedRefresh(); e != nil {
+			log.Println(e.Error())
+		}
+	}()
+}
+
+// SyncedRefresh
+// Refreshes Provider configurations synchronously. A provider does not need to guarantee a
 // refresh, but should have an error-free implementation then.
-func Refresh() error {
+func SyncedRefresh() error {
 	errors := err.Errors()
 	lock.Lock()
 	for provider, registry := range env.providers {
