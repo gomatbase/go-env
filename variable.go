@@ -18,6 +18,7 @@ type variable struct {
 	sources      []*source
 	chain        []Provider
 	converter    func(value interface{}) interface{}
+	listener     func(oldValue interface{}, newValue interface{})
 	mutex        sync.Mutex
 }
 
@@ -45,6 +46,11 @@ func (v *variable) From(s Source) *variable {
 
 func (v *variable) Required() *variable {
 	v.required = true
+	return v
+}
+
+func (v *variable) ListeningWith(listener func(oldValue interface{}, newValue interface{})) *variable {
+	v.listener = listener
 	return v
 }
 

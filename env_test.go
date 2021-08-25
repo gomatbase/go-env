@@ -721,5 +721,137 @@ func TestRefresh(t *testing.T) {
 
 	t.Run("Test refresh with configured variable listeners", func(t *testing.T) {
 		reset()
+
+		var oldValue1 interface{}
+		var newValue1 interface{}
+		_ = Var("property1").
+			Default("default1").
+			Required().
+			ListeningWith(func(oldValue interface{}, newValue interface{}) {
+				oldValue1 = oldValue
+				newValue1 = newValue
+			}).Add()
+		var oldValue2 interface{}
+		var newValue2 interface{}
+		_ = Var("property2").
+			ListeningWith(func(oldValue interface{}, newValue interface{}) {
+				oldValue2 = oldValue
+				newValue2 = newValue
+			}).Add()
+		var oldValue3 interface{}
+		var newValue3 interface{}
+		_ = Var("property3").
+			Default("default3").
+			Required().
+			ListeningWith(func(oldValue interface{}, newValue interface{}) {
+				oldValue3 = oldValue
+				newValue3 = newValue
+			}).Add()
+		var oldValue4 interface{}
+		var newValue4 interface{}
+		_ = Var("property4").
+			Default("default4").
+			Required().
+			ListeningWith(func(oldValue interface{}, newValue interface{}) {
+				oldValue4 = oldValue
+				newValue4 = newValue
+			}).Add()
+		var oldValue5 interface{}
+		var newValue5 interface{}
+		_ = Var("property5").
+			Default("default5").
+			Required().
+			ListeningWith(func(oldValue interface{}, newValue interface{}) {
+				oldValue5 = oldValue
+				newValue5 = newValue
+			}).Add()
+
+		os.Args = []string{"app", "-property1", "cmlValue1", "-j", "tests/config.json", "-y", "tests/config.yml"}
+		_ = os.Setenv("property1", "envValue1")
+		_ = os.Setenv("property3", "envValue3")
+		_ = os.Setenv("property5", "envValue5")
+		Load()
+
+		if v, isType := Get("property1").(string); !isType {
+			t.Error("property1 is not of the expected type")
+		} else if v != "cmlValue1" {
+			t.Errorf("value for property1 is not the expected one: %v", v)
+		} else if oldValue1 != nil || newValue1 != nil {
+			t.Errorf("old and new value1 variables having unexpected values (%v, %v)", oldValue1, newValue1)
+		}
+		if Get("property2") != nil {
+			t.Error("property2 was expected to be nil")
+		} else if oldValue2 != nil || newValue2 != nil {
+			t.Errorf("old and new value2 variables having unexpected values (%v, %v)", oldValue2, newValue2)
+		}
+		if v, isType := Get("property3").(string); !isType {
+			t.Error("property3 is not of the expected type")
+		} else if v != "jsonValue3" {
+			t.Errorf("value for property3 is not the expected one: %v", v)
+		} else if oldValue3 != nil || newValue3 != nil {
+			t.Errorf("old and new value3 variables having unexpected values (%v, %v)", oldValue3, newValue3)
+		}
+		if v, isType := Get("property4").(string); !isType {
+			t.Error("property4 is not of the expected type")
+		} else if v != "yamlValue4" {
+			t.Errorf("value for property4 is not the expected one: %v", v)
+		} else if oldValue4 != nil || newValue4 != nil {
+			t.Errorf("old and new value4 variables having unexpected values (%v, %v)", oldValue4, newValue4)
+		}
+		if v, isType := Get("property5").(string); !isType {
+			t.Error("property5 is not of the expected type")
+		} else if v != "envValue5" {
+			t.Errorf("value for property5 is not the expected one: %v", v)
+		} else if oldValue5 != nil || newValue5 != nil {
+			t.Errorf("old and new value5 variables having unexpected values (%v, %v)", oldValue5, newValue5)
+		}
+
+		updateJson()
+		updateYaml()
+		os.Args = originalArguments
+		_ = os.Setenv("property5", "envNewValue5")
+		if e := Refresh(); e != nil {
+			t.Error("Unexpected refresh errors :\n", e.Error())
+		}
+
+		if v, isType := Get("property1").(string); !isType {
+			t.Error("property1 is not of the expected type")
+		} else if v != "jsonNewValue1" {
+			t.Errorf("value for property1 is not the expected one: %v", v)
+		} else if oldValue1 != "jsonValue1" || newValue1 != "jsonNewValue1" {
+			t.Errorf("old and new value1 variables having unexpected values (%v, %v)", oldValue1, newValue1)
+		}
+		if v, isType := Get("property2").(string); !isType {
+			t.Error("property2 is not of the expected type")
+		} else if v != "jsonValue2" {
+			t.Errorf("value for property2 is not the expected one: %v", v)
+		} else if oldValue2 != nil || newValue1 != "jsonValue2" {
+			t.Errorf("old and new value2 variables having unexpected values (%v, %v)", oldValue2, newValue2)
+		}
+		if v, isType := Get("property3").(string); !isType {
+			t.Error("property3 is not of the expected type")
+		} else if v != "yamlNewValue3" {
+			t.Errorf("value for property3 is not the expected one: %v", v)
+		} else if oldValue3 != "jsonValue3" || newValue1 != "yamlNewValue3" {
+			t.Errorf("old and new value3 variables having unexpected values (%v, %v)", oldValue3, newValue3)
+		}
+		if v, isType := Get("property4").(string); !isType {
+			t.Error("property4 is not of the expected type")
+		} else if v != "yamlNewValue4" {
+			t.Errorf("value for property4 is not the expected one: %v", v)
+		} else if oldValue1 != "yamlValue4" || newValue1 != "yamlNewValue4" {
+			t.Errorf("old and new value4 variables having unexpected values (%v, %v)", oldValue4, newValue4)
+		}
+		// For defined variables, values are cached to do comparison. The environment variable provider should never
+		// report being dirty and the value for the property should not change.
+		if v, isType := Get("property5").(string); !isType {
+			t.Error("property5 is not of the expected type")
+		} else if v != "envValue5" {
+			t.Errorf("value for property5 is not the expected one: %v", v)
+		} else if oldValue1 != nil || newValue1 != nil {
+			t.Errorf("old and new value5 variables having unexpected values (%v, %v)", oldValue5, newValue5)
+		}
 	})
+
+	reset()
 }
