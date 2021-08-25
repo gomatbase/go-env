@@ -818,28 +818,28 @@ func TestRefresh(t *testing.T) {
 			t.Error("property1 is not of the expected type")
 		} else if v != "jsonNewValue1" {
 			t.Errorf("value for property1 is not the expected one: %v", v)
-		} else if oldValue1 != "jsonValue1" || newValue1 != "jsonNewValue1" {
+		} else if oldValue1 != "cmlValue1" || newValue1 != "jsonNewValue1" {
 			t.Errorf("old and new value1 variables having unexpected values (%v, %v)", oldValue1, newValue1)
 		}
 		if v, isType := Get("property2").(string); !isType {
 			t.Error("property2 is not of the expected type")
 		} else if v != "jsonValue2" {
 			t.Errorf("value for property2 is not the expected one: %v", v)
-		} else if oldValue2 != nil || newValue1 != "jsonValue2" {
+		} else if oldValue2 != nil || newValue2 != "jsonValue2" {
 			t.Errorf("old and new value2 variables having unexpected values (%v, %v)", oldValue2, newValue2)
 		}
 		if v, isType := Get("property3").(string); !isType {
 			t.Error("property3 is not of the expected type")
 		} else if v != "yamlNewValue3" {
 			t.Errorf("value for property3 is not the expected one: %v", v)
-		} else if oldValue3 != "jsonValue3" || newValue1 != "yamlNewValue3" {
+		} else if oldValue3 != "jsonValue3" || newValue3 != "yamlNewValue3" {
 			t.Errorf("old and new value3 variables having unexpected values (%v, %v)", oldValue3, newValue3)
 		}
 		if v, isType := Get("property4").(string); !isType {
 			t.Error("property4 is not of the expected type")
 		} else if v != "yamlNewValue4" {
 			t.Errorf("value for property4 is not the expected one: %v", v)
-		} else if oldValue1 != "yamlValue4" || newValue1 != "yamlNewValue4" {
+		} else if oldValue4 != "yamlValue4" || newValue4 != "yamlNewValue4" {
 			t.Errorf("old and new value4 variables having unexpected values (%v, %v)", oldValue4, newValue4)
 		}
 		// For defined variables, values are cached to do comparison. The environment variable provider should never
@@ -848,7 +848,7 @@ func TestRefresh(t *testing.T) {
 			t.Error("property5 is not of the expected type")
 		} else if v != "envValue5" {
 			t.Errorf("value for property5 is not the expected one: %v", v)
-		} else if oldValue1 != nil || newValue1 != nil {
+		} else if oldValue5 != nil || newValue5 != nil {
 			t.Errorf("old and new value5 variables having unexpected values (%v, %v)", oldValue5, newValue5)
 		}
 	})

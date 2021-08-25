@@ -211,6 +211,10 @@ func Refresh() error {
 					}
 				}
 			}
+			v.mutex.Unlock()
+			if v.cachedValue.value != nil && v.listener != nil {
+				v.listener(nil, v.cachedValue)
+			}
 		} else {
 			var newValue interface{}
 			for _, s := range v.sources {
@@ -224,14 +228,18 @@ func Refresh() error {
 					}
 				}
 			}
+			oldValue := v.cachedValue.value
 			if newValue != nil && newValue != v.cachedValue.value {
-				v.cachedValue.value = newValue
 				if v.converter != nil {
-					v.cachedValue.value = v.converter(v.cachedValue.value)
+					newValue = v.converter(newValue)
 				}
+				v.cachedValue.value = newValue
+			}
+			v.mutex.Unlock()
+			if newValue != nil && oldValue != newValue && v.listener != nil {
+				v.listener(oldValue, newValue)
 			}
 		}
-		v.mutex.Unlock()
 	}
 
 	lock.Lock()
